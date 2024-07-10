@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import User from "../models/Users.js";
 const router = express.Router();
 
+// creating the user
 router.post("/register", async (req, res) => {
   const { username, password, role } = req.body;
 

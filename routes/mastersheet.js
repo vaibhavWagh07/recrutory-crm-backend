@@ -1,202 +1,328 @@
 import express from "express";
 import "dotenv/config.js";
-import Masterlead from "../models/Mastersheet.js";
-import Selectedsheet from "../models/Selectedsheet.js";
+import Mastersheet from "../models/Mastersheet.js";
+import ClientSheet from "../models/Client.js";
 
 const router = express.Router();
 
 // checking api
 router.get("/", (req, res) => {
   res.status(200).send({
-    msg: "lead APIs are working successfully",
+    msg: "Mastersheet's APIs are working successfully",
   });
 });
-  
-// Create a new lead
-router.post("/create", async (req, res) => {
-  const lead = new Masterlead({
-    fName: req.body.fName,
-    lName: req.body.lName,
-    email: req.body.email,
-    phone: req.body.phone,
-    status: req.body.status || "not assigned",
-    lType: req.body.lType,
-    language: req.body.language,
-    proficiencyLevel: req.body.proficiencyLevel,
-    jbStatus: req.body.jbStatus,
-    qualification: req.body.qualification,
-    industry: req.body.industry,
-    domain: req.body.domain,
-    exp: req.body.exp,
-    cLocation: req.body.cLocation,
-    pLocation: req.body.pLocation,
-    currentCTC: req.body.currentCTC,
-    expectedCTC: req.body.expectedCTC,
-    noticePeriod: req.body.noticePeriod,
-    wfh: req.body.wfh,
-    resumeLink: req.body.resumeLink,
-    linkedinLink: req.body.linkedinLink,
-    feedback: req.body.feedback,
-    remark: req.body.remark,
-    company: req.body.company,
-    voiceNonVoice: req.body.voiceNonVoice,
-    source: req.body.source,
-    placedBy: req.body.placedBy,
-  });
 
+// Create a new candidate
+router.post("/create", async (req, res) => {
   try {
-    const newLead = await lead.save();
-    console.log("NewLead is: " + newLead);
-    res.status(201).json(newLead);
+    const candidate = new Mastersheet({
+      name: req.body.name,
+      email: req.body.email,
+      phone: req.body.phone,
+      status: req.body.status || null,
+      assignProcess: req.body.assignProcess || null,
+      interested: req.body.interested || null,
+      assignedRecruiter: req.body.assignedRecruiter || null,
+      lType: req.body.lType,
+      language: req.body.language,
+      proficiencyLevel: req.body.proficiencyLevel,
+      jbStatus: req.body.jbStatus,
+      qualification: req.body.qualification,
+      industry: req.body.industry,
+      domain: req.body.domain,
+      exp: req.body.exp,
+      cLocation: req.body.cLocation,
+      pLocation: req.body.pLocation,
+      currentCTC: req.body.currentCTC,
+      expectedCTC: req.body.expectedCTC,
+      noticePeriod: req.body.noticePeriod,
+      wfh: req.body.wfh,
+      resumeLink: req.body.resumeLink,
+      linkedinLink: req.body.linkedinLink,
+      feedback: req.body.feedback,
+      remark: req.body.remark,
+      company: req.body.company,
+      voiceNonVoice: req.body.voiceNonVoice,
+      source: req.body.source,
+      placedBy: req.body.placedBy || null,
+    });
+
+    const newCandidate = await candidate.save();
+    console.log("New Candidate is: " + newCandidate);
+    res.status(201).json(newCandidate);
   } catch (err) {
-    console.error("Error saving lead:", err);
+    console.error("Error saving the Candidate:", err);
     res
       .status(500)
-      .json({ message: "Failed to create lead", error: err.message });
+      .json({ message: "Failed to create candidate", error: err.message });
   }
 });
 
-// GET all leads
-router.get("/leads", async (req, res) => {
+// GET all candidates
+router.get("/candidates", async (req, res) => {
   try {
-    const leads = await Masterlead.find();
-    res.json(leads);
+    const candidates = await Mastersheet.find();
+    res.json(candidates);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// GET lead by id
-router.get("/leads/:id", async (req, res) => {
+// GET candidate by id
+router.get("/candidates/:id", async (req, res) => {
   const { id } = req.params;
   try {
-    const lead = await Masterlead.findById(id);
-    if (!lead) {
-      return res.status(404).json({ message: "Lead not found" });
+    const candidate = await Mastersheet.findById(id);
+    if (!candidate) {
+      return res.status(404).json({ message: "candidate not found" });
     }
-    res.status(200).json(lead);
+    res.status(200).json(candidate);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// DELETE lead by id
-router.delete("/leads/:id", async (req, res) => {
+// DELETE candidate by id
+router.delete("/candidates/:id", async (req, res) => {
   try {
-    const lead = await Masterlead.findById(req.params.id);
-    console.log("Found lead:", lead); // Add this line for debugging
+    const candidate = await Mastersheet.findById(req.params.id);
+    console.log("Candidate lead:", candidate);
 
-    if (!lead) {
-      return res.status(404).json({ message: "Lead not found" });
+    if (!candidate) {
+      return res.status(404).json({ message: "candidate not found" });
     }
 
-    await lead.deleteOne();
-    res.json({ message: "Lead deleted successfully" });
-    console.log("Delete lead");
+    await candidate.deleteOne();
+    res.json({ message: "candidate deleted successfully" });
+    console.log("Delete candidate");
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// PUT particular lead
-router.put("/leads/:id", async (req, res) => {
+// PUT and shifting candidate to the intCandidate[] of the process
+router.put("/candidate/:id", async (req, res) => {
   try {
-    const lead = await Masterlead.findById(req.params.id);
-    if (!lead) {
-      return res.status(404).json({ message: "Lead not found" });
+    const candidate = await Mastersheet.findById(req.params.id);
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate not found" });
     }
 
-    const oldStatus = lead.status;
+    const newAssignProcess = req.body.assignProcess || candidate.assignProcess;
+    console.log("New assignProcess is: " + newAssignProcess);
+    console.log("req.body.assignProcess is: " + req.body.assignProcess);
+    console.log("candidate.assignProcess is: " + candidate.assignProcess);
 
-    // updating lead with new entries
-    lead.fName = req.body.fName || lead.fName;
-    lead.lName = req.body.lName || lead.lName;
-    lead.email = req.body.email || lead.email;
-    lead.phone = req.body.phone || lead.phone;
-    lead.status = req.body.status || lead.status;
-    lead.lType = req.body.lType || lead.lType;
-    lead.language = req.body.language || lead.language;
-    lead.proficiencyLevel = req.body.proficiencyLevel || lead.proficiencyLevel;
-    lead.jbStatus = req.body.jbStatus || lead.jbStatus;
-    lead.qualification = req.body.qualification || lead.qualification;
-    lead.industry = req.body.industry || lead.industry;
-    lead.domain = req.body.domain || lead.domain;
-    lead.exp = req.body.exp || lead.exp;
-    lead.cLocation = req.body.cLocation || lead.cLocation;
-    lead.pLocation = req.body.pLocation || lead.pLocation;
-    lead.currentCTC = req.body.currentCTC || lead.currentCTC;
-    lead.expectedCTC = req.body.expectedCTC || lead.expectedCTC;
-    lead.noticePeriod = req.body.noticePeriod || lead.noticePeriod;
-    lead.wfh = req.body.wfh || lead.wfh;
-    lead.resumeLink = req.body.resumeLink || lead.resumeLink;
-    lead.linkedinLink = req.body.linkedinLink || lead.linkedinLink;
-    lead.feedback = req.body.feedback || lead.feedback;
-    lead.remark = req.body.remark || lead.remark;
-    lead.company = req.body.company || lead.company;
-    lead.voiceNonVoice = req.body.voiceNonVoice || lead.voiceNonVoice;
-    lead.source = req.body.source || lead.source;
-    lead.placedBy = req.body.placedBy || lead.placedBy;
+    // Updating candidate with new entries
+    candidate.name = req.body.name || candidate.name;
+    candidate.email = req.body.email || candidate.email;
+    candidate.phone = req.body.phone || candidate.phone;
+    candidate.status = req.body.status || candidate.status;
+    candidate.assignProcess = newAssignProcess;
+    candidate.interested = req.body.interested || candidate.interested;
+    candidate.assignedRecruiter =
+      req.body.assignedRecruiter || candidate.assignedRecruiter;
+    candidate.lType = req.body.lType || candidate.lType;
+    candidate.language = req.body.language || candidate.language;
+    candidate.proficiencyLevel =
+      req.body.proficiencyLevel || candidate.proficiencyLevel;
+    candidate.jbStatus = req.body.jbStatus || candidate.jbStatus;
+    candidate.qualification = req.body.qualification || candidate.qualification;
+    candidate.industry = req.body.industry || candidate.industry;
+    candidate.domain = req.body.domain || candidate.domain;
+    candidate.exp = req.body.exp || candidate.exp;
+    candidate.cLocation = req.body.cLocation || candidate.cLocation;
+    candidate.pLocation = req.body.pLocation || candidate.pLocation;
+    candidate.currentCTC = req.body.currentCTC || candidate.currentCTC;
+    candidate.expectedCTC = req.body.expectedCTC || candidate.expectedCTC;
+    candidate.noticePeriod = req.body.noticePeriod || candidate.noticePeriod;
+    candidate.wfh = req.body.wfh || candidate.wfh;
+    candidate.resumeLink = req.body.resumeLink || candidate.resumeLink;
+    candidate.linkedinLink = req.body.linkedinLink || candidate.linkedinLink;
+    candidate.feedback = req.body.feedback || candidate.feedback;
+    candidate.remark = req.body.remark || candidate.remark;
+    candidate.company = req.body.company || candidate.company;
+    candidate.voiceNonVoice = req.body.voiceNonVoice || candidate.voiceNonVoice;
+    candidate.source = req.body.source || candidate.source;
+    candidate.placedBy = req.body.placedBy || candidate.placedBy;
 
-    // if status = done, delete from lead data and add into masterlead data
-    if ((lead.status === "selected" || lead.status === "Selected" || lead.status === "SELECTED") && oldStatus !== lead.status) {
-      const masterLead = new Selectedsheet({
-        fName: lead.fName,
-        lName: lead.lName,
-        email: lead.email,
-        phone: lead.phone,
-        status: lead.status,
-        lType: lead.lType,
-        language: lead.language,
-        proficiencyLevel: lead.proficiencyLevel,
-        jbStatus: lead.jbStatus,
-        qualification: lead.qualification,
-        industry: lead.industry,
-        domain: lead.domain,
-        exp: lead.exp,
-        cLocation: lead.cLocation,
-        pLocation: lead.pLocation,
-        currentCTC: lead.currentCTC,
-        expectedCTC: lead.expectedCTC,
-        noticePeriod: lead.noticePeriod,
-        wfh: lead.wfh,
-        resumeLink: lead.resumeLink,
-        linkedinLink: lead.linkedinLink,
-        feedback: lead.feedback,
-        remark: lead.remark,
-        company: lead.company,
-        voiceNonVoice: lead.voiceNonVoice,
-        source: lead.source,
-        placedBy: lead.placedBy,
+    // if assignProcess is changed
+    if (newAssignProcess == candidate.assignProcess) {
+      console.log("in if statement");
+      const [clientName, processName, processLanguage] = newAssignProcess.split(" - ");
+
+      const client = await ClientSheet.findOne({
+        clientName,
+        "clientProcess.clientProcessName": processName,
+        "clientProcess.clientProcessLanguage": processLanguage,
       });
 
-      try {
-        const savedMasterLead = await masterLead.save();
-        await Masterlead.findByIdAndDelete(lead._id); // Delete the lead from the Lead collection
-        return res.json({
-          message: "Lead moved to master collection and deleted from lead collection",
-          masterLead: savedMasterLead,
+
+      if (client) {
+        const process = client.clientProcess.find(
+          (p) =>
+            p.clientProcessName === processName &&
+            p.clientProcessLanguage === processLanguage
+        );
+
+        const newCandidate = {
+          candidateId: candidate._id,
+          name: candidate.name,
+          email: candidate.email,
+          phone: candidate.phone,
+          lType: candidate.lType,
+          language: candidate.language,
+          proficiencyLevel: candidate.proficiencyLevel,
+          jbStatus: candidate.jbStatus,
+          qualification: candidate.qualification,
+          industry: candidate.industry,
+          domain: candidate.domain,
+          exp: candidate.exp,
+          cLocation: candidate.cLocation,
+          pLocation: candidate.pLocation,
+          currentCTC: candidate.currentCTC,
+          expectedCTC: candidate.expectedCTC,
+          noticePeriod: candidate.noticePeriod,
+          wfh: candidate.wfh,
+          resumeLink: candidate.resumeLink,
+          linkedinLink: candidate.linkedinLink,
+          feedback: candidate.feedback,
+          remark: candidate.remark,
+          company: candidate.company,
+          voiceNonVoice: candidate.voiceNonVoice,
+          source: candidate.source,
+          placedBy: candidate.placedBy,
+          interested: candidate.interested,
+        };
+
+        process.interestedCandidates.push(newCandidate);
+
+        candidate.assignProcess = null; // Reset the assignProcess in MasterSheet
+
+        await client.save();
+        await candidate.save();
+
+        return res.status(200).json({
+          message:
+            "Candidate added to interestedCandidates and updated in MasterSheet",
         });
-      } catch (err) {
-        console.log("error in transferring data into the masterlead");
-        return res.status(500).json({
-          message: "Error saving to master collection or deleting lead",
-          error: err.message,
-        });
+      } else {
+        return res.status(404).json({ message: "Client or process not found" });
       }
     } 
-    
-    // if changes does not include change in status, keep it in lead data once updated
     else {
-      const updatedLead = await lead.save();
-      res.json(updatedLead);
+      console.log("Client saved");
+      await candidate.save();
+      return res.status(200).json(candidate);
     }
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    console.log("in the catch box");
+    res.status(500).json({ message: err.message });
   }
 });
 
+// PUT particular candidate
+// router.put("/candidate/:id", async (req, res) => {
+//   try {
+//     const candidate = await Mastersheet.findById(req.params.id);
+//     if (!candidate) {
+//       return res.status(404).json({ message: "Candidate not found" });
+//     }
+
+//     const newAssignProcess = candidate.assignProcess;
+
+//     // updating candidate with new entries
+//     candidate.name = req.body.name || candidate.name;
+//     candidate.email = req.body.email || candidate.email;
+//     candidate.phone = req.body.phone || candidate.phone;
+//     candidate.status = req.body.status || candidate.status;
+//     candidate.assignProcess = req.body.status || candidate.assignProcess;
+//     candidate.interested = req.body.status || candidate.interested;
+//     candidate.assignedRecruiter = req.body.status || candidate.assignedRecruiter;
+//     candidate.lType = req.body.lType || candidate.lType;
+//     candidate.language = req.body.language || candidate.language;
+//     candidate.proficiencyLevel = req.body.proficiencyLevel || candidate.proficiencyLevel;
+//     candidate.jbStatus = req.body.jbStatus || candidate.jbStatus;
+//     candidate.qualification = req.body.qualification || candidate.qualification;
+//     candidate.industry = req.body.industry || candidate.industry;
+//     candidate.domain = req.body.domain || candidate.domain;
+//     candidate.exp = req.body.exp || candidate.exp;
+//     candidate.cLocation = req.body.cLocation || candidate.cLocation;
+//     candidate.pLocation = req.body.pLocation || candidate.pLocation;
+//     candidate.currentCTC = req.body.currentCTC || candidate.currentCTC;
+//     candidate.expectedCTC = req.body.expectedCTC || candidate.expectedCTC;
+//     candidate.noticePeriod = req.body.noticePeriod || candidate.noticePeriod;
+//     candidate.wfh = req.body.wfh || candidate.wfh;
+//     candidate.resumeLink = req.body.resumeLink || candidate.resumeLink;
+//     candidate.linkedinLink = req.body.linkedinLink || candidate.linkedinLink;
+//     candidate.feedback = req.body.feedback || candidate.feedback;
+//     candidate.remark = req.body.remark || candidate.remark;
+//     candidate.company = req.body.company || candidate.company;
+//     candidate.voiceNonVoice = req.body.voiceNonVoice || candidate.voiceNonVoice;
+//     candidate.source = req.body.source || candidate.source;
+//     candidate.placedBy = req.body.placedBy || candidate.placedBy;
+
+//     // if status = done, delete from lead data and add into masterlead data
+//     if (
+//       (candidate.assignProcess === "selected" ||
+//         candidate.assignProcess === "Selected" ||
+//         candidate.assignProcess === "SELECTED") &&
+//         newAssignProcess !== candidate.assignProcess
+//     ) {
+//       const masterLead = new Selectedsheet({
+//         name: lead.name,
+//         email: lead.email,
+//         phone: lead.phone,
+//         status: lead.status,
+//         lType: lead.lType,
+//         language: lead.language,
+//         proficiencyLevel: lead.proficiencyLevel,
+//         jbStatus: lead.jbStatus,
+//         qualification: lead.qualification,
+//         industry: lead.industry,
+//         domain: lead.domain,
+//         exp: lead.exp,
+//         cLocation: lead.cLocation,
+//         pLocation: lead.pLocation,
+//         currentCTC: lead.currentCTC,
+//         expectedCTC: lead.expectedCTC,
+//         noticePeriod: lead.noticePeriod,
+//         wfh: lead.wfh,
+//         resumeLink: lead.resumeLink,
+//         linkedinLink: lead.linkedinLink,
+//         feedback: lead.feedback,
+//         remark: lead.remark,
+//         company: lead.company,
+//         voiceNonVoice: lead.voiceNonVoice,
+//         source: lead.source,
+//         placedBy: lead.placedBy,
+//       });
+
+//       try {
+//         const savedMasterLead = await masterLead.save();
+//         await Masterlead.findByIdAndDelete(lead._id); // Delete the lead from the Lead collection
+//         return res.json({
+//           message:
+//             "Lead moved to master collection and deleted from lead collection",
+//           masterLead: savedMasterLead,
+//         });
+//       } catch (err) {
+//         console.log("error in transferring data into the masterlead");
+//         return res.status(500).json({
+//           message: "Error saving to master collection or deleting lead",
+//           error: err.message,
+//         });
+//       }
+//     }
+
+//     // if changes does not include change in status, keep it in lead data once updated
+//     else {
+//       const updatedLead = await lead.save();
+//       res.json(updatedLead);
+//     }
+//   } catch (err) {
+//     res.status(400).json({ message: err.message });
+//   }
+// });
 
 export default router;
-// not changed the table name lead and masterLead
-// lead -> masterlead
-// masterLead -> selectedsheet

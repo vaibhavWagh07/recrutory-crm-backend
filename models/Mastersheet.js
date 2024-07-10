@@ -1,14 +1,15 @@
-import mongoose, { model } from "mongoose";
+import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
-const MasterSchema = new Schema({
-  // Defining fixed fields
-  fName: { type: String, required: true },
-  lName: { type: String, required: true },
+const MasterSheetSchema = new Schema({
+  name: { type: String, required: true },
   email: { type: String, required: true },
   phone: { type: String, required: true },
   date: { type: Date, default: Date.now },
-  status: { type: String, default: "not assigned" },
+  status: { type: String, default: null },
+  assignProcess: { type: String, default: null },
+  interested: { type: String, default: null },  // Field for marking candidates interested or not by the recruiters
+  assignedRecruiter: { type: String, default: null },
   lType: { type: String, required: true },
   language: { type: Array, required: true },
   proficiencyLevel: { type: String },
@@ -33,6 +34,6 @@ const MasterSchema = new Schema({
   placedBy: { type: String },
 });
 
-const Mastersheet = model("Mastersheet", MasterSchema);
+const Mastersheet = mongoose.model('Mastersheet', MasterSheetSchema);
 
 export default Mastersheet;

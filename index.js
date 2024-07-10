@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import connectToMongo from './database/db.js';
 import mastersheet from './routes/mastersheet.js';
+import client from './routes/client.js';
 import users  from './routes/user.js';
 
 connectToMongo();
@@ -18,7 +19,8 @@ app.get('/', (req, res) => {
     res.send('crm api are working')
 })
 
-app.use('/api/crm', mastersheet);
+app.use('/api/master', mastersheet);
+app.use('/api/client', client);
 app.use('/api',users)
 
 app.listen(port, () => {
