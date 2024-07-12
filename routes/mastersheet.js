@@ -100,7 +100,8 @@ router.delete("/candidates/:id", async (req, res) => {
   }
 });
 
-// PUT and shifting candidate to the intCandidate[] of the process
+
+// PUT and shift candidate to the interestedCandidates[] of the process
 router.put("/candidate/:id", async (req, res) => {
   try {
     const candidate = await Mastersheet.findById(req.params.id);
@@ -109,23 +110,17 @@ router.put("/candidate/:id", async (req, res) => {
     }
 
     const newAssignProcess = req.body.assignProcess || candidate.assignProcess;
-    console.log("New assignProcess is: " + newAssignProcess);
-    console.log("req.body.assignProcess is: " + req.body.assignProcess);
-    console.log("candidate.assignProcess is: " + candidate.assignProcess);
 
-    // Updating candidate with new entries
+    // Update candidate with new entries
     candidate.name = req.body.name || candidate.name;
     candidate.email = req.body.email || candidate.email;
     candidate.phone = req.body.phone || candidate.phone;
     candidate.status = req.body.status || candidate.status;
-    candidate.assignProcess = newAssignProcess;
     candidate.interested = req.body.interested || candidate.interested;
-    candidate.assignedRecruiter =
-      req.body.assignedRecruiter || candidate.assignedRecruiter;
+    candidate.assignedRecruiter = req.body.assignedRecruiter || candidate.assignedRecruiter;
     candidate.lType = req.body.lType || candidate.lType;
     candidate.language = req.body.language || candidate.language;
-    candidate.proficiencyLevel =
-      req.body.proficiencyLevel || candidate.proficiencyLevel;
+    candidate.proficiencyLevel = req.body.proficiencyLevel || candidate.proficiencyLevel;
     candidate.jbStatus = req.body.jbStatus || candidate.jbStatus;
     candidate.qualification = req.body.qualification || candidate.qualification;
     candidate.industry = req.body.industry || candidate.industry;
@@ -146,9 +141,7 @@ router.put("/candidate/:id", async (req, res) => {
     candidate.source = req.body.source || candidate.source;
     candidate.placedBy = req.body.placedBy || candidate.placedBy;
 
-    // if assignProcess is changed
-    if (newAssignProcess == candidate.assignProcess) {
-      console.log("in if statement");
+    if (newAssignProcess && newAssignProcess !== candidate.assignProcess) {
       const [clientName, processName, processLanguage] = newAssignProcess.split(" - ");
 
       const client = await ClientSheet.findOne({
@@ -157,7 +150,6 @@ router.put("/candidate/:id", async (req, res) => {
         "clientProcess.clientProcessLanguage": processLanguage,
       });
 
-
       if (client) {
         const process = client.clientProcess.find(
           (p) =>
@@ -165,63 +157,62 @@ router.put("/candidate/:id", async (req, res) => {
             p.clientProcessLanguage === processLanguage
         );
 
-        const newCandidate = {
-          candidateId: candidate._id,
-          name: candidate.name,
-          email: candidate.email,
-          phone: candidate.phone,
-          lType: candidate.lType,
-          language: candidate.language,
-          proficiencyLevel: candidate.proficiencyLevel,
-          jbStatus: candidate.jbStatus,
-          qualification: candidate.qualification,
-          industry: candidate.industry,
-          domain: candidate.domain,
-          exp: candidate.exp,
-          cLocation: candidate.cLocation,
-          pLocation: candidate.pLocation,
-          currentCTC: candidate.currentCTC,
-          expectedCTC: candidate.expectedCTC,
-          noticePeriod: candidate.noticePeriod,
-          wfh: candidate.wfh,
-          resumeLink: candidate.resumeLink,
-          linkedinLink: candidate.linkedinLink,
-          feedback: candidate.feedback,
-          remark: candidate.remark,
-          company: candidate.company,
-          voiceNonVoice: candidate.voiceNonVoice,
-          source: candidate.source,
-          placedBy: candidate.placedBy,
-          interested: candidate.interested,
-        };
+        if (process) {
+          const newCandidate = {
+            candidateId: candidate._id,
+            name: candidate.name,
+            email: candidate.email,
+            phone: candidate.phone,
+            lType: candidate.lType,
+            language: candidate.language,
+            proficiencyLevel: candidate.proficiencyLevel,
+            jbStatus: candidate.jbStatus,
+            qualification: candidate.qualification,
+            industry: candidate.industry,
+            domain: candidate.domain,
+            exp: candidate.exp,
+            cLocation: candidate.cLocation,
+            pLocation: candidate.pLocation,
+            currentCTC: candidate.currentCTC,
+            expectedCTC: candidate.expectedCTC,
+            noticePeriod: candidate.noticePeriod,
+            wfh: candidate.wfh,
+            resumeLink: candidate.resumeLink,
+            linkedinLink: candidate.linkedinLink,
+            feedback: candidate.feedback,
+            remark: candidate.remark,
+            company: candidate.company,
+            voiceNonVoice: candidate.voiceNonVoice,
+            source: candidate.source,
+            placedBy: candidate.placedBy,
+            interested: candidate.interested,
+          };
 
-        process.interestedCandidates.push(newCandidate);
+          process.interestedCandidates.push(newCandidate);
+          candidate.assignProcess = null; // Reset the assignProcess in MasterSheet
 
-        candidate.assignProcess = null; // Reset the assignProcess in MasterSheet
+          await client.save();
+          await candidate.save();
 
-        await client.save();
-        await candidate.save();
-
-        return res.status(200).json({
-          message:
-            "Candidate added to interestedCandidates and updated in MasterSheet",
-        });
+          return res.status(200).json({
+            message: "Candidate added to interestedCandidates and updated in MasterSheet",
+          });
+        }
       } else {
         return res.status(404).json({ message: "Client or process not found" });
       }
-    } 
-    else {
-      console.log("Client saved");
+    } else {
       await candidate.save();
       return res.status(200).json(candidate);
     }
   } catch (err) {
-    console.log("in the catch box");
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 });
 
-// PUT particular candidate
+
+// PUT and shifting candidate to the intCandidate[] of the process
 // router.put("/candidate/:id", async (req, res) => {
 //   try {
 //     const candidate = await Mastersheet.findById(req.params.id);
@@ -229,19 +220,24 @@ router.put("/candidate/:id", async (req, res) => {
 //       return res.status(404).json({ message: "Candidate not found" });
 //     }
 
-//     const newAssignProcess = candidate.assignProcess;
+//     const newAssignProcess = req.body.assignProcess || candidate.assignProcess;
+//     console.log("New assignProcess is: " + newAssignProcess);
+//     console.log("req.body.assignProcess is: " + req.body.assignProcess);
+//     console.log("candidate.assignProcess is: " + candidate.assignProcess);
 
-//     // updating candidate with new entries
+//     // Updating candidate with new entries
 //     candidate.name = req.body.name || candidate.name;
 //     candidate.email = req.body.email || candidate.email;
 //     candidate.phone = req.body.phone || candidate.phone;
 //     candidate.status = req.body.status || candidate.status;
-//     candidate.assignProcess = req.body.status || candidate.assignProcess;
-//     candidate.interested = req.body.status || candidate.interested;
-//     candidate.assignedRecruiter = req.body.status || candidate.assignedRecruiter;
+//     candidate.assignProcess = newAssignProcess;
+//     candidate.interested = req.body.interested || candidate.interested;
+//     candidate.assignedRecruiter =
+//       req.body.assignedRecruiter || candidate.assignedRecruiter;
 //     candidate.lType = req.body.lType || candidate.lType;
 //     candidate.language = req.body.language || candidate.language;
-//     candidate.proficiencyLevel = req.body.proficiencyLevel || candidate.proficiencyLevel;
+//     candidate.proficiencyLevel =
+//       req.body.proficiencyLevel || candidate.proficiencyLevel;
 //     candidate.jbStatus = req.body.jbStatus || candidate.jbStatus;
 //     candidate.qualification = req.body.qualification || candidate.qualification;
 //     candidate.industry = req.body.industry || candidate.industry;
@@ -262,66 +258,78 @@ router.put("/candidate/:id", async (req, res) => {
 //     candidate.source = req.body.source || candidate.source;
 //     candidate.placedBy = req.body.placedBy || candidate.placedBy;
 
-//     // if status = done, delete from lead data and add into masterlead data
-//     if (
-//       (candidate.assignProcess === "selected" ||
-//         candidate.assignProcess === "Selected" ||
-//         candidate.assignProcess === "SELECTED") &&
-//         newAssignProcess !== candidate.assignProcess
-//     ) {
-//       const masterLead = new Selectedsheet({
-//         name: lead.name,
-//         email: lead.email,
-//         phone: lead.phone,
-//         status: lead.status,
-//         lType: lead.lType,
-//         language: lead.language,
-//         proficiencyLevel: lead.proficiencyLevel,
-//         jbStatus: lead.jbStatus,
-//         qualification: lead.qualification,
-//         industry: lead.industry,
-//         domain: lead.domain,
-//         exp: lead.exp,
-//         cLocation: lead.cLocation,
-//         pLocation: lead.pLocation,
-//         currentCTC: lead.currentCTC,
-//         expectedCTC: lead.expectedCTC,
-//         noticePeriod: lead.noticePeriod,
-//         wfh: lead.wfh,
-//         resumeLink: lead.resumeLink,
-//         linkedinLink: lead.linkedinLink,
-//         feedback: lead.feedback,
-//         remark: lead.remark,
-//         company: lead.company,
-//         voiceNonVoice: lead.voiceNonVoice,
-//         source: lead.source,
-//         placedBy: lead.placedBy,
+//     // if assignProcess is changed
+//     if (newAssignProcess == candidate.assignProcess) {
+//       console.log("in if statement");
+//       const [clientName, processName, processLanguage] = newAssignProcess.split(" - ");
+
+//       const client = await ClientSheet.findOne({
+//         clientName,
+//         "clientProcess.clientProcessName": processName,
+//         "clientProcess.clientProcessLanguage": processLanguage,
 //       });
 
-//       try {
-//         const savedMasterLead = await masterLead.save();
-//         await Masterlead.findByIdAndDelete(lead._id); // Delete the lead from the Lead collection
-//         return res.json({
-//           message:
-//             "Lead moved to master collection and deleted from lead collection",
-//           masterLead: savedMasterLead,
-//         });
-//       } catch (err) {
-//         console.log("error in transferring data into the masterlead");
-//         return res.status(500).json({
-//           message: "Error saving to master collection or deleting lead",
-//           error: err.message,
-//         });
-//       }
-//     }
 
-//     // if changes does not include change in status, keep it in lead data once updated
+//       if (client) {
+//         const process = client.clientProcess.find(
+//           (p) =>
+//             p.clientProcessName === processName &&
+//             p.clientProcessLanguage === processLanguage
+//         );
+
+//         const newCandidate = {
+//           candidateId: candidate._id,
+//           name: candidate.name,
+//           email: candidate.email,
+//           phone: candidate.phone,
+//           lType: candidate.lType,
+//           language: candidate.language,
+//           proficiencyLevel: candidate.proficiencyLevel,
+//           jbStatus: candidate.jbStatus,
+//           qualification: candidate.qualification,
+//           industry: candidate.industry,
+//           domain: candidate.domain,
+//           exp: candidate.exp,
+//           cLocation: candidate.cLocation,
+//           pLocation: candidate.pLocation,
+//           currentCTC: candidate.currentCTC,
+//           expectedCTC: candidate.expectedCTC,
+//           noticePeriod: candidate.noticePeriod,
+//           wfh: candidate.wfh,
+//           resumeLink: candidate.resumeLink,
+//           linkedinLink: candidate.linkedinLink,
+//           feedback: candidate.feedback,
+//           remark: candidate.remark,
+//           company: candidate.company,
+//           voiceNonVoice: candidate.voiceNonVoice,
+//           source: candidate.source,
+//           placedBy: candidate.placedBy,
+//           interested: candidate.interested,
+//         };
+
+//         process.interestedCandidates.push(newCandidate);
+
+//         candidate.assignProcess = null; // Reset the assignProcess in MasterSheet
+
+//         await client.save();
+//         await candidate.save();
+
+//         return res.status(200).json({
+//           message:
+//             "Candidate added to interestedCandidates and updated in MasterSheet",
+//         });
+//       } else {
+//         return res.status(404).json({ message: "Client or process not found" });
+//       }
+//     } 
 //     else {
-//       const updatedLead = await lead.save();
-//       res.json(updatedLead);
+//       console.log("Client saved");
+//       await candidate.save();
+//       return res.status(200).json(candidate);
 //     }
 //   } catch (err) {
-//     res.status(400).json({ message: err.message });
+//     console.log("in the catch box");
+//     res.status(500).json({ message: err.message });
 //   }
 // });
 

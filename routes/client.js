@@ -119,8 +119,7 @@ router.put("/clients/:id", async (req, res) => {
     const orgClient = await ClientSheet.findById(id);
 
     orgClient.clientName = req.body.clientName || orgClient.clientName;
-    orgClient.clientVertical =
-      req.body.clientVertical || orgClient.clientVertical;
+    orgClient.clientVertical = req.body.clientVertical || orgClient.clientVertical;
     orgClient.clientPoc = req.body.clientPoc || orgClient.clientPoc;
     orgClient.clientProcess = req.body.clientProcess || orgClient.clientProcess;
 
@@ -300,73 +299,155 @@ router.get("/process-options", async (req, res) => {
 });
 
 
+// ----------------------------------------- Candidates wrt Process ------------------------------------------
+
+// ----------------- PUT FOR PROCESS ---------------------------
+
+// PUT request to update process details other than candidates
+router.put('/clients/:clientId/processes/:processId', async (req, res) => {
+  try {
+    const { clientId, processId } = req.params;
+
+
+    // Find the client
+    const client = await ClientSheet.findById(clientId);
+
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    // Find the process within the client
+    const process = client.clientProcess.id(processId);
+
+    if (!process) {
+      return res.status(404).json({ message: 'Process not found' });
+    }
+
+    // Update the process's details based on the request body
+    process.clientProcessName = req.body.clientProcessName || process.clientProcessName;
+    process.clientProcessLanguage = req.body.clientProcessLanguage || process.clientProcessLanguage;
+    process.clientProcessPoc = req.body.clientProcessPoc || process.clientProcessPoc;
+    process.interestedCandidates = req.body.interestedCandidates || process.interestedCandidates;
+    process.clientProcessCandReq = req.body.clientProcessCandReq || process.clientProcessCandReq;
+    process.clientProcessDeadline = req.body.clientProcessDeadline || process.clientProcessDeadline;
+    process.clientProcessPckg = req.body.clientProcessPckg || process.clientProcessPckg;
+    process.clientProcessLocation = req.body.clientProcessLocation || process.clientProcessLocation;
+    process.clientProcessJoining = req.body.clientProcessJoining || process.clientProcessJoining;
+    process.clientProcessPerks = req.body.clientProcessPerks || process.clientProcessPerks;
+    process.clientProcessJobDesc = req.body.clientProcessJobDesc || process.clientProcessJobDesc;
+
+
+    // Mark the subdocument as modified
+    // client.markModified('clientProcess');
+
+    // Save the parent document after updating process details
+    await client.save();
+
+    // Reload the client document to check if the process was updated
+    const updatedClient = await ClientSheet.findById(clientId);
+    const updatedProcess = updatedClient.clientProcess.id(processId);
+
+    res.status(200).json({ message: 'Process updated successfully', updatedProcess });
+  } catch (error) {
+    console.error('Error updating process:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
+
+
+// PUT request to update specific candidate details within a process
+router.put('/clients/:clientId/processes/:processId/candidates/:candidateId', async (req, res) => {
+  try {
+    const { clientId, processId, candidateId } = req.params;
+
+    // Find the client
+    const client = await ClientSheet.findById(clientId);
+
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    // Find the process within the client
+    const process = client.clientProcess.id(processId);
+
+    if (!process) {
+      return res.status(404).json({ message: 'Process not found' });
+    }
+
+    // Find the interested candidate within the process
+    const candidate = process.interestedCandidates.id(candidateId);
+
+    if (!candidate) {
+      return res.status(404).json({ message: 'Candidate not found in the process' });
+    }
+
+    // Update specific fields in the candidate
+    candidate.assignedRecruiter = req.body.assignedRecruiter || candidate.assignedRecruiter;
+    candidate.status = req.body.status || candidate.status;
+    candidate.interested = req.body.interested || candidate.interested;
+
+    // Fields to update in the MasterSheet and other copies
+    const fieldsToUpdateInMaster = {
+      name: req.body.name,
+      email: req.body.email,
+      phone: req.body.phone,
+      lType: req.body.lType,
+      language: req.body.language,
+      proficiencyLevel: req.body.proficiencyLevel,
+      jbStatus: req.body.jbStatus,
+      qualification: req.body.qualification,
+      industry: req.body.industry,
+      domain: req.body.domain,
+      exp: req.body.exp,
+      cLocation: req.body.cLocation,
+      pLocation: req.body.pLocation,
+      currentCTC: req.body.currentCTC,
+      expectedCTC: req.body.expectedCTC,
+      noticePeriod: req.body.noticePeriod,
+      wfh: req.body.wfh,
+      resumeLink: req.body.resumeLink,
+      linkedinLink: req.body.linkedinLink,
+      feedback: req.body.feedback,
+      company: req.body.company,
+      voiceNonVoice: req.body.voiceNonVoice,
+      source: req.body.source,
+      placedBy: req.body.placedBy,
+    };
+
+    // Find and update the candidate in the MasterSheet
+    const masterCandidate = await Mastersheet.findById(candidate.candidateId);
+
+    if (masterCandidate) {
+      Object.assign(masterCandidate, fieldsToUpdateInMaster);
+      await masterCandidate.save();
+
+      // Find and update all copies of the candidate in other processes
+      const clients = await ClientSheet.find({ 'clientProcess.interestedCandidates.candidateId': candidate.candidateId });
+
+      for (const client of clients) {
+        for (const process of client.clientProcess) {
+          for (const candidateCopy of process.interestedCandidates) {
+            if (candidateCopy.candidateId.toString() === candidate.candidateId.toString()) {
+              Object.assign(candidateCopy, fieldsToUpdateInMaster);
+            }
+          }
+        }
+        await client.save();
+      }
+    } else {
+      console.warn(`Master candidate with ID ${candidate.candidateId} not found.`);
+    }
+
+    // Save the client document after updating candidate details
+    await client.save();
+
+    res.status(200).json({ message: 'Candidate details updated successfully', candidate });
+  } catch (error) {
+    console.error('Error updating candidate details:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
+
 
 
 export default router;
-
-// ------------- PUT LOGIC FOR THE CLIENT
-
-// working fine, but if added new one, it's replacing the previous data so numerical change is happening
-// router.put("/clients/:id", async (req, res) => {
-//   let { id } = req.params;
-
-//   // Trim any leading colons or other characters from the ID
-//   id = id.replace(/^:/, '');
-
-//   // Check if the provided id is a valid ObjectId
-//   if (!mongoose.Types.ObjectId.isValid(id)) {
-//     console.log(`Invalid client ID: ${id}`);
-//     return res.status(400).json({
-//       message: "Invalid client id",
-//     });
-//   }
-
-//   const { clientName, clientVertical, clientPoc, clientProcess } = req.body;
-
-//   try {
-//     const updateFields = {};
-
-//     if (clientName) updateFields.clientName = clientName;
-//     if (clientVertical) updateFields.clientVertical = clientVertical;
-
-//     if (clientPoc) {
-//       updateFields.clientPoc = clientPoc.map(poc => {
-//         const isValid = mongoose.Types.ObjectId.isValid(poc._id);
-//         console.log(`Processing POC ID: ${poc._id}, isValid: ${isValid}`);
-//         return {
-//           ...poc,
-//           _id: isValid ? new mongoose.Types.ObjectId(poc._id) : new mongoose.Types.ObjectId()
-//         };
-//       });
-//     }
-
-//     if (clientProcess) {
-//       updateFields.clientProcess = clientProcess.map(process => {
-//         const isValid = mongoose.Types.ObjectId.isValid(process._id);
-//         console.log(`Processing Process ID: ${process._id}, isValid: ${isValid}`);
-//         return {
-//           ...process,
-//           _id: isValid ? new mongoose.Types.ObjectId(process._id) : new mongoose.Types.ObjectId()
-//         };
-//       });
-//     }
-
-//     const updatedClient = await ClientSheet.findByIdAndUpdate(id, { $set: updateFields }, {
-//       new: true,
-//       runValidators: true,
-//     });
-
-//     if (!updatedClient) {
-//       return res.status(404).json({
-//         message: "Client not found",
-//       });
-//     }
-
-//     res.status(200).json(updatedClient);
-//   } catch (error) {
-//     console.error(`Error updating client: ${error.message}`);
-//     res.status(500).json({
-//       message: error.message,
-//     });
-//   }
-// });

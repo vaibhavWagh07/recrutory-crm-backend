@@ -54,6 +54,8 @@ const ClientSchema = new Schema({
         source: { type: String },
         placedBy: { type: String },
         interested: { type: String, default: null },
+        assignedRecruiter: { type: String, default: null },
+        status: { type: String, default: null },
       }],
       clientProcessCandReq: { type: String },
       clientProcessDeadline: { type: Date },

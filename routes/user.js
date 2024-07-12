@@ -6,6 +6,9 @@ import bcrypt from "bcryptjs";
 import User from "../models/Users.js";
 const router = express.Router();
 
+
+// ---------------------- SIGN UP AND LOGIN ----------------------------------------
+
 // creating the user
 router.post("/register", async (req, res) => {
   const { username, password, role } = req.body;
@@ -88,5 +91,13 @@ function verifyToken(req, res, next) {
     });
   }
 }
+
+
+
+
+
+
+
+
 
 export default router;
