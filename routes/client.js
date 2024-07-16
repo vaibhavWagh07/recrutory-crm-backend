@@ -451,5 +451,49 @@ router.put('/clients/:clientId/processes/:processId/candidates/:candidateId', as
 });
 
 
+// PUT request to handle multiple candidates, to assign a common recruiter
+router.put('/clients/assign-recruiter/:clientId/:processId', async (req, res) => {
+  const { clientId, processId } = req.params;
+  const { ids, recruiterId, newAssignedRecruiter } = req.body;
+
+  if (!ids || !recruiterId || !newAssignedRecruiter) {
+    return res.status(400).json({ message: 'Invalid request body' });
+  }
+
+  try {
+    const client = await ClientSheet.findById(clientId);
+
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    // Find the correct process within clientProcess array
+    const processToUpdate = client.clientProcess.find(process => process._id.toString() === processId);
+
+    if (!processToUpdate) {
+      return res.status(404).json({ message: 'Process not found' });
+    }
+
+    // Convert recruiterId to ObjectId
+    const recruiterObjectId = new mongoose.Types.ObjectId(recruiterId);
+
+    // Convert candidate IDs to ObjectId
+    const candidateObjectIds = ids.map(id => new mongoose.Types.ObjectId(id));
+
+    // Update the interestedCandidates array within the found process
+    await ClientSheet.updateOne(
+      { _id: clientId, 'clientProcess._id': processId, 'clientProcess.interestedCandidates._id': { $in: candidateObjectIds } },
+      { $set: { 'clientProcess.$.interestedCandidates.$[candidate].assignedRecruiterId': recruiterObjectId, 'clientProcess.$.interestedCandidates.$[candidate].assignedRecruiter': newAssignedRecruiter } },
+      { arrayFilters: [{ 'candidate._id': { $in: candidateObjectIds } }] }
+    );
+
+    res.status(200).json({ message: 'Recruiters assigned successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
 
 export default router;

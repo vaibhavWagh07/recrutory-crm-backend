@@ -255,7 +255,7 @@ router.put("/candidates/:id", async (req, res) => {
 });
 
 // Updating (POST) and shifting MULTIPLE candidates to intCandidate[] of the process (just assignedRecruiter option)
-router.post("/candidates/update", async (req, res) => {
+router.post("/candidates/assign-process", async (req, res) => {
   try {
     const { ids, newAssignProcess } = req.body;
 

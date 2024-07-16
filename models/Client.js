@@ -54,6 +54,7 @@ const ClientSchema = new Schema({
           voiceNonVoice: { type: String },
           source: { type: String },
           interested: { type: String, default: null },
+          assignedRecruiterId: {type: Schema.Types.ObjectId, default: null},
           assignedRecruiter: { type: String, default: null },
           status: { type: String, default: null },
         },

@@ -100,28 +100,27 @@ function verifyToken(req, res, next) {
 // ------------------- user's general properties': -------------------------------------------
 
 // Fetch users by role
-router.get("/users-by-role", async (req, res) => {
+router.get('/users-by-role', async (req, res) => {
   const { role } = req.query;
 
   if (!role) {
-    return res.status(400).json({ message: "Role is required" });
+    return res.status(400).json({ message: 'Role is required' });
   }
 
   try {
     const users = await User.find({ role });
 
-    // Create a map where the key is the user ID and the value is the username
+    // Create a map where the key is the user ID (as a string) and the value is the username
     const userMap = users.reduce((map, user) => {
-      map[user._id] = user.username;
+      map[user._id.toString()] = user.username;
       return map;
     }, {});
 
     res.status(200).json(userMap);
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
-
 
 // get all the users
 router.get("/users", async (req,res) => {
