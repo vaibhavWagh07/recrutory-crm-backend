@@ -15,7 +15,7 @@ router.get("/", (req, res) => {
 // -------------------------------------- client ---------------------------------------
 
 // creating new client
-router.post("/create", async (req, res) => {
+router.post("/clients", async (req, res) => {
   try {
     const { clientName, clientVertical, clientPoc } = req.body;
 
@@ -299,9 +299,11 @@ router.get("/process-options", async (req, res) => {
 });
 
 
-// ----------------------------------------- Candidates wrt Process ------------------------------------------
+// ----------------------------------------- Candidates wrt Process ----------------------------
 
 // ----------------- PUT FOR PROCESS ---------------------------
+
+
 
 // PUT request to update process details other than candidates
 router.put('/clients/:clientId/processes/:processId', async (req, res) => {
@@ -410,8 +412,7 @@ router.put('/clients/:clientId/processes/:processId/candidates/:candidateId', as
       feedback: req.body.feedback,
       company: req.body.company,
       voiceNonVoice: req.body.voiceNonVoice,
-      source: req.body.source,
-      placedBy: req.body.placedBy,
+      source: req.body.source
     };
 
     // Find and update the candidate in the MasterSheet

@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 const secretKey = "secretKey";
 import bcrypt from "bcryptjs";
 import User from "../models/Users.js";
+import Users from "../models/Users.js";
 const router = express.Router();
 
 
@@ -25,6 +26,8 @@ router.post("/register", async (req, res) => {
     username,
     password: hashedPassword,
     role,
+    assignedCandidatesId: [],
+    
   });
 
   await newUser.save();
@@ -92,6 +95,116 @@ function verifyToken(req, res, next) {
   }
 }
 
+
+
+// ------------------- user's general properties': -------------------------------------------
+
+// Fetch users by role
+router.get("/users-by-role", async (req, res) => {
+  const { role } = req.query;
+
+  if (!role) {
+    return res.status(400).json({ message: "Role is required" });
+  }
+
+  try {
+    const users = await User.find({ role });
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// get all the users
+router.get("/users", async (req,res) => {
+  try {
+    const users = await Users.find();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({
+      message: err.message
+    });
+  }
+})
+
+// get user by id
+router.get("/users/:id", async (req,res) => {
+  try {
+    const { id } = req.params;
+    const user = await Users.findById(id);
+
+    if(!user){
+      res.status(404).json({message: "User not found"});
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+})
+
+// delete a particular user
+router.delete("/users/:id", async (req,res) => {
+  try {
+    const {id} = req.params;
+    const user = await Users.findById(id);
+
+    if(!user){
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+
+    await user.deleteOne();
+    res.json({
+      message: "User Deleted Successfully"
+    });
+  } catch (error) {
+    res.status(500).json({message: error.message});
+  }
+})
+
+// edit a particular user
+router.put("/users/:id", async (req,res) => {
+ 
+  try {
+    
+    const { id } = req.params;
+    const user = await Users.findById(id);
+
+    if(!user){
+      res.status(404).json({
+        message: "User not found"
+      });
+    }
+
+    // crypt the password before updating
+    const orgPassword = req.body.password || user.password;
+    const hashedPassword = await bcrypt.hash(orgPassword, 10);
+
+    // updating fields
+    user.username = req.body.username || user.username;
+    user.password = hashedPassword;
+    user.role = req.body.role || user.role;
+
+    // save the user
+    await user.save();
+
+    res.status(200).json({
+      message: "User Updated Successfully"
+    });
+
+  } catch (err) {
+    res.status(500).json({message: err.message});
+  }
+
+})
+
+
+
+
+// ---------------------- user specific properties -------------------------------------
 
 
 

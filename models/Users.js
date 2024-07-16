@@ -1,12 +1,12 @@
-import mongoose, { model } from "mongoose";  
+import mongoose, { model } from "mongoose";
 const { Schema } = mongoose;
 
 const userSchema = new mongoose.Schema({
-    username: String,
-    password: String, 
-    role: String
-  });
+  username: { type: String, required: true },
+  password: { type: String, required: true },
+  role: { type: String, required: true },
+});
 
-  const Users = model("Users", userSchema);
+const Users = model("Users", userSchema);
 
-  export default Users;
+export default Users;
