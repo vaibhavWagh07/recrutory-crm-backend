@@ -410,6 +410,7 @@ router.put('/clients/:clientId/processes/:processId/candidates/:candidateId', as
       resumeLink: req.body.resumeLink,
       linkedinLink: req.body.linkedinLink,
       feedback: req.body.feedback,
+      remark: req.body.remark,
       company: req.body.company,
       voiceNonVoice: req.body.voiceNonVoice,
       source: req.body.source
