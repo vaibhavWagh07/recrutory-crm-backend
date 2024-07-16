@@ -109,11 +109,19 @@ router.get("/users-by-role", async (req, res) => {
 
   try {
     const users = await User.find({ role });
-    res.status(200).json(users);
+
+    // Create a map where the key is the user ID and the value is the username
+    const userMap = users.reduce((map, user) => {
+      map[user._id] = user.username;
+      return map;
+    }, {});
+
+    res.status(200).json(userMap);
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
 
 // get all the users
 router.get("/users", async (req,res) => {
