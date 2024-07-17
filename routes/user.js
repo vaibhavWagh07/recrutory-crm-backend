@@ -5,6 +5,11 @@ const secretKey = "secretKey";
 import bcrypt from "bcryptjs";
 import User from "../models/Users.js";
 import Users from "../models/Users.js";
+import ClientSheet from "../models/Client.js";
+import mongoose from "mongoose";
+import Mastersheet from "../models/Mastersheet.js";
+import moment from "moment-timezone";
+
 const router = express.Router();
 
 
@@ -209,11 +214,142 @@ router.put("/users/:id", async (req,res) => {
 })
 
 
-
-
 // ---------------------- user specific properties -------------------------------------
 
+// Fetch candidates assigned to a particular recruiter
+router.get('/assigned-candidates', async (req, res) => {
+  const { recruiterId } = req.query;
+  console.log("recruiter id is: " + recruiterId);
 
+  if (!recruiterId) {
+    return res.status(400).json({ message: 'Recruiter ID is required' });
+  }
+
+  try {
+    const clients = await ClientSheet.find({
+      'clientProcess.interestedCandidates.assignedRecruiterId': new mongoose.Types.ObjectId(recruiterId)
+    }).populate({
+      path: 'clientProcess.interestedCandidates',
+      populate: {
+        path: 'candidateId',
+        select: '_id' // Only include the _id field of candidateId
+      }
+    });
+
+    const candidates = [];
+
+    clients.forEach(client => {
+      client.clientProcess.forEach(process => {
+        process.interestedCandidates.forEach(candidate => {
+          if (candidate.assignedRecruiterId && candidate.assignedRecruiterId.toString() === recruiterId) {
+            console.log("candidate.assignedRecruiterId is: " + candidate.assignedRecruiterId);
+            console.log("recruiterId is: " + recruiterId);
+            candidates.push({
+              candidateId: candidate.candidateId._id, // Include only _id of candidateId
+              clientProcessId: process._id, // Include _id of clientProcess
+              clientId: client._id, // Include _id of client
+              ...candidate._doc,
+              assignedProcess: `${client.clientName} - ${process.clientProcessName} - ${process.clientProcessLanguage}`
+            });
+          }
+        });
+      });
+    });
+
+    console.log("Success");
+    res.status(200).json(candidates);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error', error });
+  }
+});
+
+
+// PUT request for handling Interested and not interested status by the recruiter
+router.put("/update-status", async (req, res) => {
+  const { clientId, clientProcessId, candidateId, interestedStatus } = req.body;
+
+  if (!candidateId || !interestedStatus) {
+    return res
+      .status(400)
+      .json({ message: "Candidate ID and interestedStatus are required" });
+  }
+
+  try {
+    // Find the client
+    const client = await ClientSheet.findById(clientId);
+    console.log("client id is: " + clientId);
+
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+
+    // Find the process within the client
+    const process = client.clientProcess.id(clientProcessId);
+
+    if (!process) {
+      return res.status(404).json({ message: "Process not found" });
+    }
+
+    // Find the interested candidate within the process
+    const candidate = process.interestedCandidates.id(candidateId);
+
+    if (!candidate) {
+      return res
+        .status(404)
+        .json({ message: "Candidate not found in the process" });
+    }
+
+    const oldInterestedStatus = candidate.interested;
+    candidate.interested = interestedStatus;
+
+    if (
+      interestedStatus === "interested" &&
+      oldInterestedStatus !== "interested"
+    ) {
+      candidate.markedInterestedDate = moment().tz("Asia/Kolkata").format("YYYY-MM-DD HH:mm:ss");
+    } 
+    else if (interestedStatus !== "interested") {
+      candidate.interested = null;
+      candidate.markedInterestedDate = null;
+      if (candidate.feedback === "" || candidate.remark === "") {
+        return res.status(404).json({
+          message:
+            "Please provide the feedback and remark for not being interested",
+        });
+      } 
+      else {
+        // Move remark and feedback to Mastersheet
+        const mastersheetCandidate = await Mastersheet.findById(
+          candidate.candidateId
+        );
+
+        if (mastersheetCandidate) {
+          mastersheetCandidate.remark = candidate.remark;
+          mastersheetCandidate.feedback = candidate.feedback;
+          await mastersheetCandidate.save();
+          await candidate.deleteOne();
+        } 
+        else {
+          console.error(
+            "Mastersheet candidate not found for ID:",
+            candidate.candidateId
+          );
+        }
+      }
+    }
+
+    // save the client irrespective of the update being interested or not interested
+    await client.save();
+
+
+    res
+      .status(200)
+      .json({ message: "Candidate interest status updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error", error });
+  }
+});
 
 
 
