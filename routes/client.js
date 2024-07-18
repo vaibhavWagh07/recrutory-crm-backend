@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import ClientSheet from "../models/Client.js";
 import Mastersheet from "../models/Mastersheet.js";
+import Users from "../models/Users.js";
 import moment from "moment-timezone";
 
 const router = express.Router();
@@ -478,7 +479,7 @@ router.put(
   }
 );
 
-// PUT request to handle multiple candidates, to assign a common recruiter
+// PUT request to handle multiple candidates, to assign a common recruiter (holds a function call for the updateRecruiterCounts function given below)
 router.put(
   "/clients/assign-recruiter/:clientId/:processId",
   async (req, res) => {
@@ -539,6 +540,9 @@ router.put(
       // Save the updated client
       await client.save();
 
+      // update the counts in the user schema
+      // await updateRecruiterCounts(recruiterId);
+
       // Prepare response message
       if (alreadyAssignedCandidates.length > 0) {
         res.status(200).json({
@@ -554,6 +558,98 @@ router.put(
     }
   }
 );
+
+// update the count dynamically of totalAssigned, totalInterested and totalSelected ((not working so halted it))
+// const updateRecruiterCounts = async (recruiterId) => {
+//   if (!recruiterId) return;
+
+//   try {
+//     // Calculate total assigned candidates
+//     const totalAssignedCandidates = await ClientSheet.aggregate([
+//       { $unwind: '$clientProcess' },
+//       { $unwind: '$clientProcess.interestedCandidates' },
+//       { $match: { 'clientProcess.interestedCandidates.assignedRecruiterId': new mongoose.Types.ObjectId(recruiterId) } },
+//       { $group: { _id: null, totalAssigned: { $sum: 1 } } }
+//     ]);
+
+//     const totalAssignedCount = totalAssignedCandidates.length > 0 ? totalAssignedCandidates[0].totalAssigned : 0;
+//     console.log('Total Assigned Candidates:', totalAssignedCount);
+
+//     // Calculate total interested amongst assigned
+//     const totalInterestedAmongstAssigned = await ClientSheet.aggregate([
+//       { $unwind: '$clientProcess' },
+//       { $unwind: '$clientProcess.interestedCandidates' },
+//       { $match: { 'clientProcess.interestedCandidates.assignedRecruiterId': new mongoose.Types.ObjectId(recruiterId), 'clientProcess.interestedCandidates.interested': 'yes' } },
+//       { $group: { _id: null, totalInterested: { $sum: 1 } } }
+//     ]);
+
+//     const totalInterestedCount = totalInterestedAmongstAssigned.length > 0 ? totalInterestedAmongstAssigned[0].totalInterested : 0;
+//     console.log('Total Interested Amongst Assigned:', totalInterestedCount);
+
+//     // Calculate total selected amongst interested
+//     const totalSelectedAmongstInterested = await ClientSheet.aggregate([
+//       { $unwind: '$clientProcess' },
+//       { $unwind: '$clientProcess.interestedCandidates' },
+//       { $match: { 'clientProcess.interestedCandidates.assignedRecruiterId': new mongoose.Types.ObjectId(recruiterId), 'clientProcess.interestedCandidates.status': 'selected' } },
+//       { $group: { _id: null, totalSelected: { $sum: 1 } } }
+//     ]);
+
+//     const totalSelectedCount = totalSelectedAmongstInterested.length > 0 ? totalSelectedAmongstInterested[0].totalSelected : 0;
+//     console.log('Total Selected Amongst Interested:', totalSelectedCount);
+
+//     // Update the recruiter counts
+//     await Users.findByIdAndUpdate(recruiterId, {
+//       totalAssignedCandidates: totalAssignedCount,
+//       totalInterestedAmongstAssigned: totalInterestedCount,
+//       totalSelectedAmongstInterested: totalSelectedCount
+//     });
+
+//     console.log(`Updated recruiter ${recruiterId} counts successfully.`);
+//   } catch (error) {
+//     console.error('Error updating recruiter counts:', error);
+//   }
+// };
+
+// get all selected candidates
+router.get('/selected-candidates', async (req, res) => {
+  try {
+    // Fetch all clients
+    const clients = await ClientSheet.find({});
+
+    // Initialize an array to store selected candidates with enhanced data
+    let selectedCandidates = [];
+
+    // Loop through each client and extract selected candidates with additional fields
+    clients.forEach(client => {
+      client.clientProcess.forEach(process => {
+        process.interestedCandidates.forEach(candidate => {
+          if (candidate.status === 'selected') {
+            // Construct additional fields
+            const clientId = client._id
+            const clientProcessId = process._id
+            const clientInfo = `${client.clientName} - ${process.clientProcessName} - ${process.clientProcessLanguage}`;
+            
+            // Add candidate with enhanced data to the response array
+            selectedCandidates.push({
+              candidate,
+              clientId,
+              clientProcessId,
+              clientInfo
+            });
+          }
+        });
+      });
+    });
+
+    // Return the response with selected candidates and additional fields
+    res.status(200).json(selectedCandidates);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 
 
 

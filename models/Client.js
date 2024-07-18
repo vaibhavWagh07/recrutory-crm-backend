@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import Users from "../models/Users.js";
 const { Schema } = mongoose;
 
 const ClientSchema = new Schema({
@@ -71,6 +72,100 @@ const ClientSchema = new Schema({
     },
   ],
 });
+
+// function for updation of the totalAssigned etc etc count in the user (not working so halted it)
+// ClientSchema.pre('save', async function (next) {
+//   const client = this;
+
+//   for (const process of client.clientProcess) {
+//     for (const candidate of process.interestedCandidates) {
+//       const recruiterId = candidate.assignedRecruiterId;
+
+//       if (recruiterId) {
+//         // Calculate total assigned candidates
+//         const totalAssignedCandidates = await ClientSheet.aggregate([
+//           { $unwind: '$clientProcess' },
+//           { $unwind: '$clientProcess.interestedCandidates' },
+//           { $match: { 'clientProcess.interestedCandidates.assignedRecruiterId': recruiterId } },
+//           { $group: { _id: null, totalAssigned: { $sum: 1 } } }
+//         ]);
+//         const totalAssignedCount = totalAssignedCandidates.length > 0 ? totalAssignedCandidates[0].totalAssigned : 0;
+
+//         // Calculate total interested amongst assigned
+//         const totalInterestedAmongstAssigned = await ClientSheet.aggregate([
+//           { $unwind: '$clientProcess' },
+//           { $unwind: '$clientProcess.interestedCandidates' },
+//           { $match: { 'clientProcess.interestedCandidates.assignedRecruiterId': recruiterId, 'clientProcess.interestedCandidates.interested': 'interested' } },
+//           { $group: { _id: null, totalInterested: { $sum: 1 } } }
+//         ]);
+//         const totalInterestedCount = totalInterestedAmongstAssigned.length > 0 ? totalInterestedAmongstAssigned[0].totalInterested : 0;
+
+//         // Calculate total selected amongst interested
+//         const totalSelectedAmongstInterested = await ClientSheet.aggregate([
+//           { $unwind: '$clientProcess' },
+//           { $unwind: '$clientProcess.interestedCandidates' },
+//           { $match: { 'clientProcess.interestedCandidates.assignedRecruiterId': recruiterId, 'clientProcess.interestedCandidates.status': 'selected' } },
+//           { $group: { _id: null, totalSelected: { $sum: 1 } } }
+//         ]);
+//         const totalSelectedCount = totalSelectedAmongstInterested.length > 0 ? totalSelectedAmongstInterested[0].totalSelected : 0;
+
+//         // Update the recruiter counts
+//         await Users.findByIdAndUpdate(recruiterId, {
+//           totalAssignedCandidates: totalAssignedCount,
+//           totalInterestedAmongstAssigned: totalInterestedCount,
+//           totalSelectedAmongstInterested: totalSelectedCount
+//         });
+//       }
+//     }
+//   }
+
+//   next();
+// });
+
+
+
+// ClientSchema.pre('save', async function (next) {
+//   const client = this;
+//   for (const process of client.clientProcess) {
+//     for (const candidate of process.interestedCandidates) {
+//       const recruiter = await Users.findById(candidate.assignedRecruiterId);
+
+//       if (recruiter) {
+//         // Calculate total assigned candidates
+//         const totalAssignedCandidates = await ClientSheet.aggregate([
+//           { $unwind: '$clientProcess' },
+//           { $unwind: '$clientProcess.interestedCandidates' },
+//           { $match: { 'clientProcess.interestedCandidates.assignedRecruiterId': recruiter._id } },
+//           { $count: 'totalAssigned' }
+//         ]);
+//         recruiter.totalAssignedCandidates = totalAssignedCandidates.length > 0 ? totalAssignedCandidates[0].totalAssigned : 0;
+
+//         // Calculate total interested amongst assigned
+//         const totalInterestedAmongstAssigned = await ClientSheet.aggregate([
+//           { $unwind: '$clientProcess' },
+//           { $unwind: '$clientProcess.interestedCandidates' },
+//           { $match: { 'clientProcess.interestedCandidates.assignedRecruiterId': recruiter._id, 'clientProcess.interestedCandidates.interested': 'yes' } },
+//           { $count: 'totalInterested' }
+//         ]);
+//         recruiter.totalInterestedAmongstAssigned = totalInterestedAmongstAssigned.length > 0 ? totalInterestedAmongstAssigned[0].totalInterested : 0;
+
+//         // Calculate total selected amongst interested
+//         const totalSelectedAmongstInterested = await ClientSheet.aggregate([
+//           { $unwind: '$clientProcess' },
+//           { $unwind: '$clientProcess.interestedCandidates' },
+//           { $match: { 'clientProcess.interestedCandidates.assignedRecruiterId': recruiter._id, 'clientProcess.interestedCandidates.status': 'selected' } },
+//           { $count: 'totalSelected' }
+//         ]);
+//         recruiter.totalSelectedAmongstInterested = totalSelectedAmongstInterested.length > 0 ? totalSelectedAmongstInterested[0].totalSelected : 0;
+
+//         await recruiter.save();
+//       }
+//     }
+//   }
+
+//   next();
+// });
+
 
 const ClientSheet = mongoose.model("ClientSheet", ClientSchema);
 

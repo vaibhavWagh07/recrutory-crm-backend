@@ -265,7 +265,7 @@ router.get('/assigned-candidates', async (req, res) => {
 });
 
 
-// PUT request for handling Interested and not interested status by the recruiter
+// PUT request for handling Interested and not interested status by the recruiter 
 router.put("/update-status", async (req, res) => {
   const { clientId, clientProcessId, candidateId, interestedStatus } = req.body;
 
