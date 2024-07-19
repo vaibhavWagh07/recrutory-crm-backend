@@ -77,11 +77,15 @@ const ClientSchema = new Schema({
 // ClientSchema.pre('save', async function (next) {
 //   const client = this;
 
+//   console.log("client is: " + client);
+
 //   for (const process of client.clientProcess) {
 //     for (const candidate of process.interestedCandidates) {
 //       const recruiterId = candidate.assignedRecruiterId;
+//       console.log("recruiter id is: " + recruiterId);
 
 //       if (recruiterId) {
+
 //         // Calculate total assigned candidates
 //         const totalAssignedCandidates = await ClientSheet.aggregate([
 //           { $unwind: '$clientProcess' },
@@ -121,7 +125,6 @@ const ClientSchema = new Schema({
 
 //   next();
 // });
-
 
 
 // ClientSchema.pre('save', async function (next) {

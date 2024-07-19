@@ -84,20 +84,46 @@ router.get("/candidates/:id", async (req, res) => {
 // DELETE candidate by id
 router.delete("/candidates/:id", async (req, res) => {
   try {
-    const candidate = await Mastersheet.findById(req.params.id);
-    console.log("Candidate lead:", candidate);
+    const candidateId = req.params.id;
+    const candidate = await Mastersheet.findById(candidateId);
 
     if (!candidate) {
-      return res.status(404).json({ message: "candidate not found" });
+      return res.status(404).json({ message: "Candidate not found" });
     }
 
+    // Fetch all clients
+    const clients = await ClientSheet.find();
+
+    // Iterate through clients and their processes to remove candidate from interestedCandidates[]
+    for (const client of clients) {
+      let isModified = false;
+      for (const process of client.clientProcess) {
+        // Remove the candidate from interestedCandidates[] if present
+        const initialLength = process.interestedCandidates.length;
+        process.interestedCandidates = process.interestedCandidates.filter(
+          (intCand) => String(intCand.candidateId) !== candidateId
+        );
+        if (process.interestedCandidates.length !== initialLength) {
+          isModified = true;
+          console.log(`Removed candidate ${candidateId} from process ${process.clientProcessName}`);
+        }
+      }
+      if (isModified) {
+        await client.save(); // Save changes only if there was a removal
+      }
+    }
+
+    // Delete the candidate from the MasterSheet
     await candidate.deleteOne();
-    res.json({ message: "candidate deleted successfully" });
-    console.log("Delete candidate");
+
+    res.json({ message: "Candidate deleted successfully along with all its copies in the processes" });
+    console.log("Delete candidate and its copies from processes");
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
+
+
 
 // PUT and shifting candidate to the intCandidate[] of the process from the edit button at the end
 router.put("/candidates/:id", async (req, res) => {
