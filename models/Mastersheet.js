@@ -1,6 +1,12 @@
 import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
+const LanguageSchema = new mongoose.Schema({
+  lType: String,
+  lang: String,
+  proficiencyLevel: String
+});
+
 const MasterSheetSchema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
@@ -10,7 +16,7 @@ const MasterSheetSchema = new Schema({
   assignProcess: { type: String, default: null },
   interested: { type: String, default: null },  // Field for marking candidates interested or not by the recruiters
   assignedRecruiter: { type: String, default: null },
-  language: { type: Array, required: true },
+  language: [LanguageSchema],
   jbStatus: { type: String },
   qualification: { type: String },
   industry: { type: String },

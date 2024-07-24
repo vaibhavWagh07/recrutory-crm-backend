@@ -79,6 +79,39 @@ router.get("/candidates/:id", async (req, res) => {
   }
 });
 
+// GET candidate after filtering the language 
+router.get("/langfilter", async (req, res) => {
+  try {
+    const { lang, proficiencyLevel } = req.query;
+
+    // Construct the filter for $elemMatch
+    let filter = {};
+
+    if (lang || proficiencyLevel) {
+      filter.language = { $elemMatch: {} };
+
+      if (lang) {
+        filter.language.$elemMatch.lang = lang;
+      }
+
+      if (proficiencyLevel) {
+        filter.language.$elemMatch.proficiencyLevel = proficiencyLevel;
+      }
+    }
+
+    // Log the constructed filter for debugging
+    console.log("Constructed filter:", filter);
+
+    // Perform the query with the constructed filter
+    const candidates = await Mastersheet.find(filter);
+    res.json(candidates);
+  } catch (err) {
+    console.error("Error filtering candidates:", err);
+    res.status(500).json({ message: "Failed to filter candidates", error: err.message });
+  }
+});
+
+
 // DELETE candidate by id
 router.delete("/candidates/:id", async (req, res) => {
   try {
