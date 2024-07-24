@@ -139,8 +139,6 @@ router.put("/clients/:id", async (req, res) => {
 
 // ----------------------------------------- process ------------------------------------------
 
-// candidates edit option is to be added here
-
 // create process and also update the assignProcess field
 router.post("/clients/:clientId/process", async (req, res) => {
   const { clientId } = req.params;
@@ -151,6 +149,20 @@ router.post("/clients/:clientId/process", async (req, res) => {
 
     if (!client) {
       return res.status(404).json({ message: "Client not found" });
+    }
+
+    // Convert dates to IST
+    if (newProcess.clientProcessDeadline) {
+      newProcess.clientProcessDeadline = moment(
+        newProcess.clientProcessDeadline
+      )
+        .tz("Asia/Kolkata")
+        .format("YYYY-MM-DD HH:mm:ss");
+    }
+    if (newProcess.clientProcessJoining) {
+      newProcess.clientProcessJoining = moment(newProcess.clientProcessJoining)
+        .tz("Asia/Kolkata")
+        .format("YYYY-MM-DD HH:mm:ss");
     }
 
     client.clientProcess.push(newProcess);
@@ -338,14 +350,24 @@ router.put("/clients/:clientId/processes/:processId", async (req, res) => {
       req.body.interestedCandidates || process.interestedCandidates;
     process.clientProcessCandReq =
       req.body.clientProcessCandReq || process.clientProcessCandReq;
-    process.clientProcessDeadline =
-      req.body.clientProcessDeadline || process.clientProcessDeadline;
+
+    // Convert dates to IST
+    if (req.body.clientProcessDeadline) {
+      process.clientProcessDeadline = moment(req.body.clientProcessDeadline)
+        .tz("Asia/Kolkata")
+        .format("YYYY-MM-DD HH:mm:ss");
+    }
+    if (req.body.clientProcessJoining) {
+      process.clientProcessJoining = moment(req.body.clientProcessJoining)
+        .tz("Asia/Kolkata")
+        .format("YYYY-MM-DD HH:mm:ss");
+    }
+
     process.clientProcessPckg =
       req.body.clientProcessPckg || process.clientProcessPckg;
     process.clientProcessLocation =
       req.body.clientProcessLocation || process.clientProcessLocation;
-    process.clientProcessJoining =
-      req.body.clientProcessJoining || process.clientProcessJoining;
+
     process.clientProcessPerks =
       req.body.clientProcessPerks || process.clientProcessPerks;
     process.clientProcessJobDesc =
@@ -513,7 +535,9 @@ router.put(
       );
 
       // Get the current date in IST
-      const currentDateInIST = moment().tz("Asia/Kolkata").format("YYYY-MM-DD HH:mm:ss");
+      const currentDateInIST = moment()
+        .tz("Asia/Kolkata")
+        .format("YYYY-MM-DD HH:mm:ss");
 
       // Array to store IDs of candidates already assigned to the same recruiter
       let alreadyAssignedCandidates = [];
@@ -545,7 +569,7 @@ router.put(
       if (alreadyAssignedCandidates.length > 0) {
         res.status(200).json({
           message: "Some candidates were already assigned to this recruiter",
-          alreadyAssignedCandidates
+          alreadyAssignedCandidates,
         });
       } else {
         res.status(200).json({ message: "Recruiters assigned successfully" });
@@ -609,7 +633,7 @@ router.put(
 // };
 
 // get all selected candidates
-router.get('/selected-candidates', async (req, res) => {
+router.get("/selected-candidates", async (req, res) => {
   try {
     // Fetch all clients
     const clients = await ClientSheet.find({});
@@ -618,21 +642,21 @@ router.get('/selected-candidates', async (req, res) => {
     let selectedCandidates = [];
 
     // Loop through each client and extract selected candidates with additional fields
-    clients.forEach(client => {
-      client.clientProcess.forEach(process => {
-        process.interestedCandidates.forEach(candidate => {
-          if (candidate.status === 'selected') {
+    clients.forEach((client) => {
+      client.clientProcess.forEach((process) => {
+        process.interestedCandidates.forEach((candidate) => {
+          if (candidate.status === "selected") {
             // Construct additional fields
-            const clientId = client._id
-            const clientProcessId = process._id
+            const clientId = client._id;
+            const clientProcessId = process._id;
             const clientInfo = `${client.clientName} - ${process.clientProcessName} - ${process.clientProcessLanguage}`;
-            
+
             // Add candidate with enhanced data to the response array
             selectedCandidates.push({
               candidate,
               clientId,
               clientProcessId,
-              clientInfo
+              clientInfo,
             });
           }
         });
@@ -643,12 +667,8 @@ router.get('/selected-candidates', async (req, res) => {
     res.status(200).json(selectedCandidates);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 });
-
-
-
-
 
 export default router;
