@@ -95,7 +95,8 @@ router.get("/langfilter", async (req, res) => {
       }
 
       if (proficiencyLevel) {
-        filter.language.$elemMatch.proficiencyLevel = proficiencyLevel;
+        const proficiencyLevels = proficiencyLevel.split(','); // Split the comma-separated proficiency levels
+        filter.language.$elemMatch.proficiencyLevel = { $in: proficiencyLevels };
       }
     }
 
