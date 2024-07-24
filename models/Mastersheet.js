@@ -10,9 +10,7 @@ const MasterSheetSchema = new Schema({
   assignProcess: { type: String, default: null },
   interested: { type: String, default: null },  // Field for marking candidates interested or not by the recruiters
   assignedRecruiter: { type: String, default: null },
-  lType: { type: String, required: true },
   language: { type: Array, required: true },
-  proficiencyLevel: { type: String },
   jbStatus: { type: String },
   qualification: { type: String },
   industry: { type: String },

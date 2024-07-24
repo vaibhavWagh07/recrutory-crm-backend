@@ -23,9 +23,7 @@ router.post("/candidates", async (req, res) => {
       assignProcess: req.body.assignProcess || null,
       interested: req.body.interested || null,
       assignedRecruiter: req.body.assignedRecruiter || null,
-      lType: req.body.lType,
       language: req.body.language,
-      proficiencyLevel: req.body.proficiencyLevel,
       jbStatus: req.body.jbStatus,
       qualification: req.body.qualification,
       industry: req.body.industry,
@@ -144,9 +142,7 @@ router.put("/candidates/:id", async (req, res) => {
     candidate.assignProcess = newAssignProcess;
     candidate.interested = req.body.interested || candidate.interested;
     candidate.assignedRecruiter = req.body.assignedRecruiter || candidate.assignedRecruiter;
-    candidate.lType = req.body.lType || candidate.lType;
     candidate.language = req.body.language || candidate.language;
-    candidate.proficiencyLevel = req.body.proficiencyLevel || candidate.proficiencyLevel;
     candidate.jbStatus = req.body.jbStatus || candidate.jbStatus;
     candidate.qualification = req.body.qualification || candidate.qualification;
     candidate.industry = req.body.industry || candidate.industry;
@@ -189,9 +185,7 @@ router.put("/candidates/:id", async (req, res) => {
           name: candidate.name,
           email: candidate.email,
           phone: candidate.phone,
-          lType: candidate.lType,
           language: candidate.language,
-          proficiencyLevel: candidate.proficiencyLevel,
           jbStatus: candidate.jbStatus,
           qualification: candidate.qualification,
           industry: candidate.industry,
@@ -243,9 +237,7 @@ router.put("/candidates/:id", async (req, res) => {
             interestedCandidate.email = candidate.email;
             interestedCandidate.phone = candidate.phone;
             interestedCandidate.status = candidate.status;
-            interestedCandidate.lType = candidate.lType;
             interestedCandidate.language = candidate.language;
-            interestedCandidate.proficiencyLevel = candidate.proficiencyLevel;
             interestedCandidate.jbStatus = candidate.jbStatus;
             interestedCandidate.qualification = candidate.qualification;
             interestedCandidate.industry = candidate.industry;
@@ -311,9 +303,7 @@ router.post("/candidates/assign-process", async (req, res) => {
         name: candidate.name,
         email: candidate.email,
         phone: candidate.phone,
-        lType: candidate.lType,
         language: candidate.language,
-        proficiencyLevel: candidate.proficiencyLevel,
         jbStatus: candidate.jbStatus,
         qualification: candidate.qualification,
         industry: candidate.industry,
