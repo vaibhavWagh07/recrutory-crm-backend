@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Users from "../models/Users.js";
+
 const { Schema } = mongoose;
 
 const ClientSchema = new Schema({
@@ -89,29 +90,50 @@ const ClientSchema = new Schema({
 //         // Calculate total assigned candidates
 //         const totalAssignedCandidates = await ClientSheet.aggregate([
 //           { $unwind: '$clientProcess' },
+//           // console.log("1st unwind property: " + unwind),
 //           { $unwind: '$clientProcess.interestedCandidates' },
+//           // console.log("2nd unwind property: " + unwind),
 //           { $match: { 'clientProcess.interestedCandidates.assignedRecruiterId': recruiterId } },
-//           { $group: { _id: null, totalAssigned: { $sum: 1 } } }
+//           // console.log("match property: " + match),
+//           { $group: { _id: null, totalAssigned: { $sum: 1 } } },
+//           // console.log("Sum at each stage is: " + sum),
+//           // console.log("group property: " + group),
 //         ]);
 //         const totalAssignedCount = totalAssignedCandidates.length > 0 ? totalAssignedCandidates[0].totalAssigned : 0;
+//         console.log("------------------- total assigned --------------------");
+//         console.log("totalassignedCandiates length is: " + totalAssignedCandidates.length);
+//         console.log("totalAssignedCandidates[0].totalAssigned is: " + totalAssignedCandidates[0].totalAssigned);
+//         console.log("---------------------------------------------------------");
+
 
 //         // Calculate total interested amongst assigned
 //         const totalInterestedAmongstAssigned = await ClientSheet.aggregate([
 //           { $unwind: '$clientProcess' },
 //           { $unwind: '$clientProcess.interestedCandidates' },
 //           { $match: { 'clientProcess.interestedCandidates.assignedRecruiterId': recruiterId, 'clientProcess.interestedCandidates.interested': 'interested' } },
-//           { $group: { _id: null, totalInterested: { $sum: 1 } } }
+//           { $group: { _id: null, totalInterested: { $sum: 1 } } },
+//           // console.log("sum in the totalInterestedAmongstAssigned is: " + sum),
 //         ]);
 //         const totalInterestedCount = totalInterestedAmongstAssigned.length > 0 ? totalInterestedAmongstAssigned[0].totalInterested : 0;
+//         console.log("------------------- totalInterestedCount --------------------");
+//         console.log("totalInterestedAmongstAssigned length is: " + totalInterestedAmongstAssigned[0].length);
+//         console.log("totalInterestedCount is: " + totalInterestedCount);
+//         console.log("---------------------------------------------------------");
 
 //         // Calculate total selected amongst interested
 //         const totalSelectedAmongstInterested = await ClientSheet.aggregate([
 //           { $unwind: '$clientProcess' },
 //           { $unwind: '$clientProcess.interestedCandidates' },
-//           { $match: { 'clientProcess.interestedCandidates.assignedRecruiterId': recruiterId, 'clientProcess.interestedCandidates.status': 'selected' } },
-//           { $group: { _id: null, totalSelected: { $sum: 1 } } }
+//           { $match: { 'clientProcess.interestedCandidates.assignedRecruiterId': recruiterId, 'clientProcess.interestedCandidates.status': 'selected' || null } },
+//           { $group: { _id: null, totalSelected: { $sum: 1 } } },     
+//           // console.log("sum in the totalSelectedAmongstInterested is: " + sum),
 //         ]);
 //         const totalSelectedCount = totalSelectedAmongstInterested.length > 0 ? totalSelectedAmongstInterested[0].totalSelected : 0;
+//         console.log("------------------- totalSelectedCount --------------------");
+//         console.log("totalSelectedAmongstInterested length is: " + totalSelectedAmongstInterested[0].length);
+//         // console.log("totalSelectedAmongstInterested[0].totalSelected is: " + totalSelectedAmongstInterested[0].totalSelected);
+//         console.log("totalSelectedCount is: " + totalSelectedCount);
+//         console.log("---------------------------------------------------------");
 
 //         // Update the recruiter counts
 //         await Users.findByIdAndUpdate(recruiterId, {
@@ -125,7 +147,6 @@ const ClientSchema = new Schema({
 
 //   next();
 // });
-
 
 // ClientSchema.pre('save', async function (next) {
 //   const client = this;
@@ -169,7 +190,7 @@ const ClientSchema = new Schema({
 //   next();
 // });
 
-
 const ClientSheet = mongoose.model("ClientSheet", ClientSchema);
 
 export default ClientSheet;
+
