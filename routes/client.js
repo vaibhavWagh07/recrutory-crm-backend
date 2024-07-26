@@ -671,4 +671,143 @@ router.get("/selected-candidates", async (req, res) => {
   }
 });
 
+// adding lang and proficiency filter for seleted candidate
+router.get("/selectedFilter", async (req, res) => {
+  const { lang, proficiencyLevel } = req.query;
+
+  try {
+    // Fetch all clients
+    const clients = await ClientSheet.find({});
+
+    // Initialize an array to store selected candidates with enhanced data
+    let selectedCandidates = [];
+
+    // Loop through each client and extract selected candidates with additional fields
+    clients.forEach((client) => {
+      client.clientProcess.forEach((process) => {
+        process.interestedCandidates.forEach((candidate) => {
+          if (candidate.status === "selected") {
+            // Construct additional fields
+            const clientId = client._id;
+            const clientProcessId = process._id;
+            const clientInfo = `${client.clientName} - ${process.clientProcessName} - ${process.clientProcessLanguage}`;
+
+            // Apply language and proficiency filter
+            let matchLang = true;
+            let matchProficiency = true;
+
+            if (lang) {
+              matchLang = candidate.language.some(l => l.lang === lang);
+            }
+
+            if (proficiencyLevel) {
+              matchProficiency = candidate.language.some(l => proficiencyLevel.split(',').includes(l.proficiencyLevel));
+            }
+
+            if (matchLang && matchProficiency) {
+              // Add candidate with enhanced data to the response array
+              selectedCandidates.push({
+                candidate,
+                clientId,
+                clientProcessId,
+                clientInfo,
+              });
+            }
+          }
+        });
+      });
+    });
+
+    // Return the response with selected candidates and additional fields
+    res.status(200).json(selectedCandidates);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// adding lang and proficiency filter for filtersheet 
+router.get("/clients/:clientId/process/:processId/filterLangFilter", async (req, res) => {
+  const { clientId, processId } = req.params;
+  const { lang, proficiencyLevel } = req.query;
+
+  try {
+    const client = await ClientSheet.findById(clientId);
+
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+
+    const process = client.clientProcess.id(processId);
+
+    if (!process) {
+      return res.status(404).json({ message: "Process not found" });
+    }
+
+    // Construct the filter for $elemMatch
+    let candidateFilter = candidate => true;
+
+    if (lang || proficiencyLevel) {
+      candidateFilter = candidate => {
+        const matchLang = lang ? candidate.language.some(l => l.lang === lang) : true;
+        const matchProficiency = proficiencyLevel ? candidate.language.some(l => proficiencyLevel.split(',').includes(l.proficiencyLevel)) : true;
+        return matchLang && matchProficiency;
+      };
+    }
+
+    // Filter candidates based on language and proficiency
+    const filteredCandidates = process.interestedCandidates.filter(candidate => candidateFilter(candidate));
+
+    res.status(200).json(filteredCandidates);
+  } catch (error) {
+    console.error("Error filtering candidates:", error);
+    res.status(500).json({ message: "Failed to filter candidates", error: error.message });
+  }
+});
+
+// adding lang and proficiency filter for interested candidate
+router.get("/clients/:clientId/process/:processId/interestedlangfilter", async (req, res) => {
+  const { clientId, processId } = req.params;
+  const { lang, proficiencyLevel } = req.query;
+
+  try {
+    const client = await ClientSheet.findById(clientId);
+
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+
+    const process = client.clientProcess.id(processId);
+
+    if (!process) {
+      return res.status(404).json({ message: "Process not found" });
+    }
+
+    // Construct the filter for $elemMatch
+    let candidateFilter = candidate => true;
+
+    if (lang || proficiencyLevel) {
+      candidateFilter = candidate => {
+        const matchLang = lang ? candidate.language.some(l => l.lang === lang) : true;
+        const matchProficiency = proficiencyLevel ? candidate.language.some(l => proficiencyLevel.split(',').includes(l.proficiencyLevel)) : true;
+        return matchLang && matchProficiency;
+      };
+    }
+
+    // Filter candidates based on language, proficiency, and interest
+    const filteredCandidates = process.interestedCandidates.filter(candidate => {
+      return candidate.interested === 'interested' && candidateFilter(candidate);
+    });
+
+    res.status(200).json(filteredCandidates);
+  } catch (error) {
+    console.error("Error filtering candidates:", error);
+    res.status(500).json({ message: "Failed to filter candidates", error: error.message });
+  }
+});
+
+
+
+
+
 export default router;

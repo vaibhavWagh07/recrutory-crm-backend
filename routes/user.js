@@ -264,6 +264,73 @@ router.get('/assigned-candidates', async (req, res) => {
   }
 });
 
+// filter for candidate assigned to a particular recruiter
+router.get('/filterCandidateRecruiter', async (req, res) => {
+  const { recruiterId, lang, proficiencyLevel } = req.query;
+  console.log("recruiter id is: " + recruiterId);
+
+  if (!recruiterId) {
+    return res.status(400).json({ message: 'Recruiter ID is required' });
+  }
+
+  try {
+    const clients = await ClientSheet.find({
+      'clientProcess.interestedCandidates.assignedRecruiterId': new mongoose.Types.ObjectId(recruiterId)
+    }).populate({
+      path: 'clientProcess.interestedCandidates',
+      populate: {
+        path: 'candidateId',
+        select: '_id' // Only include the _id field of candidateId
+      }
+    });
+
+    const candidates = [];
+
+    clients.forEach(client => {
+      client.clientProcess.forEach(process => {
+        process.interestedCandidates.forEach(candidate => {
+          if (candidate.assignedRecruiterId && candidate.assignedRecruiterId.toString() === recruiterId) {
+            let match = false;
+
+            if (lang && proficiencyLevel) {
+              // Both lang and proficiencyLevel are provided
+              const proficiencyLevels = proficiencyLevel.split(',');
+              match = candidate.language.some(l => l.lang === lang && proficiencyLevels.includes(l.proficiencyLevel));
+            } else if (lang) {
+              // Only lang is provided
+              match = candidate.language.some(l => l.lang === lang);
+            } else if (proficiencyLevel) {
+              // Only proficiencyLevel is provided
+              const proficiencyLevels = proficiencyLevel.split(',');
+              match = candidate.language.some(l => proficiencyLevels.includes(l.proficiencyLevel));
+            } else {
+              // No lang or proficiencyLevel provided
+              match = true;
+            }
+
+            if (match) {
+              candidates.push({
+                candidateId: candidate.candidateId._id, // Include only _id of candidateId
+                clientProcessId: process._id, // Include _id of clientProcess
+                clientId: client._id, // Include _id of client
+                ...candidate._doc,
+                assignedProcess: `${client.clientName} - ${process.clientProcessName} - ${process.clientProcessLanguage}`
+              });
+            }
+          }
+        });
+      });
+    });
+
+    console.log("Success");
+    res.status(200).json(candidates);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error', error });
+  }
+});
+
+
 
 // PUT request for handling Interested and not interested status by the recruiter 
 router.put("/update-status", async (req, res) => {
@@ -350,6 +417,7 @@ router.put("/update-status", async (req, res) => {
     res.status(500).json({ message: "Internal server error", error });
   }
 });
+
 
 
 
