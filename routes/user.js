@@ -57,13 +57,12 @@ router.post("/login", async (req, res) => {
     return res.status(401).json({ message: "Invalid username or password" });
   }
 
-  const payload = { username: user.username, role: user.role };
+  const payload = { username: user.username, role: user.role,_id: user._id.toString() };
 
   jwt.sign(payload, secretKey, { expiresIn: "300s" }, (err, token) => {
     if (err) {
       return res.status(500).json({ message: "Internal server error" });
     }
-    console.log({ token, role: user.role });
     res.json({ token, role: user.role });
     // res.json({ token });
   });
