@@ -63,7 +63,7 @@ router.post("/login", async (req, res) => {
     if (err) {
       return res.status(500).json({ message: "Internal server error" });
     }
-    res.json({ token, role: user.role,_id: user._id.toString() });
+    res.json({ token,username: user.username, role: user.role,_id: user._id.toString() });
     // res.json({ token });
   });
 });
