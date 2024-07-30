@@ -682,6 +682,49 @@ router.get("/selected-candidates", async (req, res) => {
   }
 });
 
+// Delete candidate from interestedCandidates array
+router.delete('/clients/:clientId/process/:processId/candidates/:candidateId', async (req, res) => {
+  try {
+    const { clientId, processId, candidateId } = req.params;
+
+    // Find the client
+    const client = await ClientSheet.findById(clientId);
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    // Find the process within the client
+    const process = client.clientProcess.id(processId);
+    if (!process) {
+      return res.status(404).json({ message: 'Process not found' });
+    }
+
+    // Find the candidate within the interestedCandidates array
+    const candidateIndex = process.interestedCandidates.findIndex(
+      (candidate) => candidate.candidateId.toString() === candidateId
+    );
+
+    if (candidateIndex === -1) {
+      return res.status(404).json({ message: 'Candidate not found in interestedCandidates' });
+    }
+
+    // Remove the candidate from the interestedCandidates array
+    process.interestedCandidates.splice(candidateIndex, 1);
+
+    // Update the client document
+    await client.save();
+
+    // Optionally, update the candidate's isProcessAssigned field in the Mastersheet
+    await Mastersheet.findByIdAndUpdate(candidateId, { isProcessAssigned: false });
+
+    res.status(200).json({ message: 'Candidate removed from interestedCandidates successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+//  ----------- Language filters API ---------------------------
+
 // adding lang and proficiency filter for seleted candidate
 router.get("/selectedFilter", async (req, res) => {
   const { lang, proficiencyLevel } = req.query;
