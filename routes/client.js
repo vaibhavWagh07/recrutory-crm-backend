@@ -683,7 +683,7 @@ router.get("/selected-candidates", async (req, res) => {
 });
 
 // Delete candidate from interestedCandidates array
-router.delete('/client/:clientId/processes/:processId/candidates/:candidateId', async (req, res) => {
+router.delete('/clients/:clientId/process/:processId/candidates/:candidateId', async (req, res) => {
   try {
     const { clientId, processId, candidateId } = req.params;
 
