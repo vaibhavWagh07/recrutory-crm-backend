@@ -428,6 +428,13 @@ router.put(
       candidate.status = req.body.status || candidate.status;
       candidate.interested = req.body.interested || candidate.interested;
 
+      // Check if the assignProcess field should be enabled or disabled
+      if (candidate.status === "Rejected" || candidate.interested !== "interested") {
+        candidate.isProcessAssigned = false;
+      } else {
+        candidate.isProcessAssigned = true;
+      }
+
       // Fields to update in the MasterSheet and other copies
       const fieldsToUpdateInMaster = {
         name: req.body.name,
@@ -452,6 +459,7 @@ router.put(
         company: req.body.company,
         voiceNonVoice: req.body.voiceNonVoice,
         source: req.body.source,
+        isProcessAssigned: candidate.isProcessAssigned == false ? false : true,
       };
 
       // Find and update the candidate in the MasterSheet
@@ -459,6 +467,9 @@ router.put(
 
       if (masterCandidate) {
         Object.assign(masterCandidate, fieldsToUpdateInMaster);
+
+        console.log("editing in the intCand[] of the process: " + masterCandidate);
+        
         await masterCandidate.save();
 
         // Find and update all copies of the candidate in other processes

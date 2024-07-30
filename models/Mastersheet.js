@@ -14,6 +14,7 @@ const MasterSheetSchema = new Schema({
   date: { type: Date, default: Date.now },
   status: { type: String, default: null },
   assignProcess: { type: String, default: null },
+  isProcessAssigned: { type: Boolean, default: false },
   interested: { type: String, default: null },  // Field for marking candidates interested or not by the recruiters
   assignedRecruiter: { type: String, default: null },
   language: [LanguageSchema],

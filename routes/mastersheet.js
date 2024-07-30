@@ -239,11 +239,13 @@ router.put("/candidates/:id", async (req, res) => {
           voiceNonVoice: candidate.voiceNonVoice,
           source: candidate.source,
           interested: candidate.interested,
+          isProcessAssigned: true,
         };
 
         process.interestedCandidates.push(newCandidate);
 
         candidate.assignProcess = null; // Reset the assignProcess in MasterSheet
+        candidate.isProcessAssigned = true;
 
         await client.save();
         await candidate.save();
@@ -357,7 +359,11 @@ router.post("/candidates/assign-process", async (req, res) => {
         voiceNonVoice: candidate.voiceNonVoice,
         source: candidate.source,
         interested: candidate.interested,
+        status: candidate.status,
+        isProcessAssigned: true, // Set isProcessAssigned to true
       };
+
+      console.log("Candidate in the masterSheet after assigning process is: " + newCandidate);
 
       // Find the process
       const process = client.clientProcess.find(
@@ -377,6 +383,9 @@ router.post("/candidates/assign-process", async (req, res) => {
 
         // Update candidate in the MasterSheet
         candidate.assignProcess = null;
+        candidate.isProcessAssigned = true; // Set isProcessAssigned to true in MasterSheet
+
+
         await candidate.save();
       } else {
         // Add to duplicate candidates list
@@ -399,6 +408,100 @@ router.post("/candidates/assign-process", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+// Updating (POST) and shifting MULTIPLE candidates to intCandidate[] of the process (just assignedRecruiter option)
+// router.post("/candidates/assign-process", async (req, res) => {
+//   try {
+//     const { ids, newAssignProcess } = req.body;
+
+//     // Split the newAssignProcess to get client and process details
+//     const [clientName, processName, processLanguage] = newAssignProcess.split(" - ");
+
+//     // Fetch the client and process
+//     const client = await ClientSheet.findOne({
+//       clientName,
+//       "clientProcess.clientProcessName": processName,
+//       "clientProcess.clientProcessLanguage": processLanguage,
+//     });
+
+//     if (!client) {
+//       return res.status(404).json({ message: "Client or process not found" });
+//     }
+
+//     // Find candidates by IDs
+//     const candidates = await Mastersheet.find({ _id: { $in: ids } });
+
+//     let duplicateCandidates = [];
+
+//     for (let candidate of candidates) {
+//       // Create a new candidate object
+//       const newCandidate = {
+//         candidateId: candidate._id,
+//         name: candidate.name,
+//         email: candidate.email,
+//         phone: candidate.phone,
+//         language: candidate.language,
+//         jbStatus: candidate.jbStatus,
+//         qualification: candidate.qualification,
+//         industry: candidate.industry,
+//         domain: candidate.domain,
+//         exp: candidate.exp,
+//         cLocation: candidate.cLocation,
+//         pLocation: candidate.pLocation,
+//         currentCTC: candidate.currentCTC,
+//         expectedCTC: candidate.expectedCTC,
+//         noticePeriod: candidate.noticePeriod,
+//         wfh: candidate.wfh,
+//         resumeLink: candidate.resumeLink,
+//         linkedinLink: candidate.linkedinLink,
+//         feedback: candidate.feedback,
+//         remark: candidate.remark,
+//         company: candidate.company,
+//         voiceNonVoice: candidate.voiceNonVoice,
+//         source: candidate.source,
+//         interested: candidate.interested,
+//       };
+
+//       // Find the process
+//       const process = client.clientProcess.find(
+//         (p) =>
+//           p.clientProcessName === processName &&
+//           p.clientProcessLanguage === processLanguage
+//       );
+
+//       // Check if the candidate is already in the interestedCandidates array
+//       const isDuplicate = process.interestedCandidates.some(
+//         (c) => c.candidateId.toString() === candidate._id.toString()
+//       );
+
+//       if (!isDuplicate) {
+//         // Add new candidate to the process
+//         process.interestedCandidates.push(newCandidate);
+
+//         // Update candidate in the MasterSheet
+//         candidate.assignProcess = null;
+//         await candidate.save();
+//       } else {
+//         // Add to duplicate candidates list
+//         duplicateCandidates.push(candidate._id.toString());
+//       }
+//     }
+
+//     // Save the updated client process
+//     await client.save();
+
+//     if (duplicateCandidates.length > 0) {
+//       res.status(200).json({
+//         message: "Some candidates were not added because they are already assigned to this process",
+//         duplicateCandidates
+//       });
+//     } else {
+//       res.status(200).json({ message: "Candidates assigned to process successfully" });
+//     }
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// });
 
 
 

@@ -59,6 +59,7 @@ const ClientSchema = new Schema({
           assignedRecruiterId: {type: Schema.Types.ObjectId, default: null},
           assignedRecruiterDate: { type: Date, default: null },
           status: { type: String, default: null },
+          isProcessAssigned: { type: Boolean, default: false },
         },
       ],
       clientProcessCandReq: { type: String },

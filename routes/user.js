@@ -393,6 +393,7 @@ router.put("/update-status", async (req, res) => {
         if (mastersheetCandidate) {
           mastersheetCandidate.remark = candidate.remark;
           mastersheetCandidate.feedback = candidate.feedback;
+          mastersheetCandidate.isProcessAssigned = false;
           await mastersheetCandidate.save();
           await candidate.deleteOne();
         } 
