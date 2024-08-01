@@ -79,7 +79,7 @@ router.get("/candidates/:id", async (req, res) => {
   }
 });
 
-// GET candidate after filtering the language 
+// GET candidate after filtering the language
 router.get("/langfilter", async (req, res) => {
   try {
     const { lang, proficiencyLevel } = req.query;
@@ -95,8 +95,10 @@ router.get("/langfilter", async (req, res) => {
       }
 
       if (proficiencyLevel) {
-        const proficiencyLevels = proficiencyLevel.split(','); // Split the comma-separated proficiency levels
-        filter.language.$elemMatch.proficiencyLevel = { $in: proficiencyLevels };
+        const proficiencyLevels = proficiencyLevel.split(","); // Split the comma-separated proficiency levels
+        filter.language.$elemMatch.proficiencyLevel = {
+          $in: proficiencyLevels,
+        };
       }
     }
 
@@ -108,10 +110,11 @@ router.get("/langfilter", async (req, res) => {
     res.json(candidates);
   } catch (err) {
     console.error("Error filtering candidates:", err);
-    res.status(500).json({ message: "Failed to filter candidates", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to filter candidates", error: err.message });
   }
 });
-
 
 // DELETE candidate by id
 router.delete("/candidates/:id", async (req, res) => {
@@ -137,7 +140,9 @@ router.delete("/candidates/:id", async (req, res) => {
         );
         if (process.interestedCandidates.length !== initialLength) {
           isModified = true;
-          console.log(`Removed candidate ${candidateId} from process ${process.clientProcessName}`);
+          console.log(
+            `Removed candidate ${candidateId} from process ${process.clientProcessName}`
+          );
         }
       }
       if (isModified) {
@@ -148,14 +153,15 @@ router.delete("/candidates/:id", async (req, res) => {
     // Delete the candidate from the MasterSheet
     await candidate.deleteOne();
 
-    res.json({ message: "Candidate deleted successfully along with all its copies in the processes" });
+    res.json({
+      message:
+        "Candidate deleted successfully along with all its copies in the processes",
+    });
     console.log("Delete candidate and its copies from processes");
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
-
-
 
 // PUT and shifting candidate to the intCandidate[] of the process from the edit button at the end
 router.put("/candidates/:id", async (req, res) => {
@@ -175,7 +181,8 @@ router.put("/candidates/:id", async (req, res) => {
     candidate.status = req.body.status || candidate.status;
     candidate.assignProcess = newAssignProcess;
     candidate.interested = req.body.interested || candidate.interested;
-    candidate.assignedRecruiter = req.body.assignedRecruiter || candidate.assignedRecruiter;
+    candidate.assignedRecruiter =
+      req.body.assignedRecruiter || candidate.assignedRecruiter;
     candidate.language = req.body.language || candidate.language;
     candidate.jbStatus = req.body.jbStatus || candidate.jbStatus;
     candidate.qualification = req.body.qualification || candidate.qualification;
@@ -199,7 +206,8 @@ router.put("/candidates/:id", async (req, res) => {
     if (isAssignProcessChanged) {
       // If assignProcess is changed
       console.log("AssignProcess changed");
-      const [clientName, processName, processLanguage] = newAssignProcess.split(" - ");
+      const [clientName, processName, processLanguage] =
+        newAssignProcess.split(" - ");
 
       const client = await ClientSheet.findOne({
         clientName,
@@ -251,7 +259,8 @@ router.put("/candidates/:id", async (req, res) => {
         await candidate.save();
 
         return res.status(200).json({
-          message: "Candidate added to interestedCandidates and updated in MasterSheet",
+          message:
+            "Candidate added to interestedCandidates and updated in MasterSheet",
         });
       } else {
         return res.status(404).json({ message: "Client or process not found" });
@@ -314,7 +323,8 @@ router.post("/candidates/assign-process", async (req, res) => {
     const { ids, newAssignProcess } = req.body;
 
     // Split the newAssignProcess to get client and process details
-    const [clientName, processName, processLanguage] = newAssignProcess.split(" - ");
+    const [clientName, processName, processLanguage] =
+      newAssignProcess.split(" - ");
 
     // Fetch the client and process
     const client = await ClientSheet.findOne({
@@ -363,7 +373,10 @@ router.post("/candidates/assign-process", async (req, res) => {
         isProcessAssigned: true, // Set isProcessAssigned to true
       };
 
-      console.log("Candidate in the masterSheet after assigning process is: " + newCandidate);
+      console.log(
+        "Candidate in the masterSheet after assigning process is: " +
+          newCandidate
+      );
 
       // Find the process
       const process = client.clientProcess.find(
@@ -385,7 +398,6 @@ router.post("/candidates/assign-process", async (req, res) => {
         candidate.assignProcess = null;
         candidate.isProcessAssigned = true; // Set isProcessAssigned to true in MasterSheet
 
-
         await candidate.save();
       } else {
         // Add to duplicate candidates list
@@ -398,11 +410,14 @@ router.post("/candidates/assign-process", async (req, res) => {
 
     if (duplicateCandidates.length > 0) {
       res.status(200).json({
-        message: "Some candidates were not added because they are already assigned to this process",
-        duplicateCandidates
+        message:
+          "Some candidates were not added because they are already assigned to this process",
+        duplicateCandidates,
       });
     } else {
-      res.status(200).json({ message: "Candidates assigned to process successfully" });
+      res
+        .status(200)
+        .json({ message: "Candidates assigned to process successfully" });
     }
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -503,6 +518,76 @@ router.post("/candidates/assign-process", async (req, res) => {
 //   }
 // });
 
+router.post("/candidate/import", async (req, res) => {
+  try {
+    const candidates = req.body.data;
 
+    // Validate data structure
+    if (!Array.isArray(candidates)) {
+      return res.status(400).json({ message: "Data should be an array" });
+    }
+
+    // Process each candidate in the array
+    const newCandidates = candidates.map((candidate) => {
+      const languages = [];
+
+      // Check if the language fields are present and split them
+      if (candidate[3] && candidate[4] && candidate[5]) {
+        const lTypes = candidate[3].split(',').map(item => item.trim());
+        const langs = candidate[4].split(',').map(item => item.trim());
+        const proficiencyLevels = candidate[5].split(',').map(item => item.trim());
+
+        // Create language objects
+        for (let i = 0; i < lTypes.length; i++) {
+          languages.push({
+            lType: lTypes[i],
+            lang: langs[i],
+            proficiencyLevel: proficiencyLevels[i]
+          });
+        }
+      }
+
+
+      return {
+        name: candidate[0],
+        email: candidate[1],
+        phone: candidate[2],
+        language: languages,
+        status: null,
+        assignProcess: null,
+        isProcessAssigned: false,
+        interested: null,
+        assignedRecruiter: null,
+        jbStatus: candidate[6],
+        qualification: candidate[7],
+        industry: candidate[8],
+        exp: candidate[9],
+        domain: candidate[10],
+        cLocation: candidate[11],
+        pLocation: candidate[12],
+        currentCTC: Number(candidate[13]) || 0,
+        expectedCTC: Number(candidate[14]) || 0,
+        noticePeriod: candidate[15],
+        wfh: candidate[16],
+        resumeLink: candidate[17],
+        linkedinLink: candidate[18],
+        feedback: candidate[19],
+        remark: candidate[20],
+        company: candidate[21],
+        voiceNonVoice: candidate[22],
+        source: candidate[23],
+      };
+    });
+
+    // Insert many documents at once
+    const result = await Mastersheet.insertMany(newCandidates);
+    res.status(201).json({ message: "Data imported successfully", result });
+  } catch (err) {
+    console.error("Error saving the candidates:", err);
+    res
+      .status(500)
+      .json({ message: "Failed to create candidates", error: err.message });
+  }
+});
 
 export default router;
