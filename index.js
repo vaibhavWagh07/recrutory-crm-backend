@@ -12,23 +12,8 @@ const port = 4000;
 // Middleware
 app.use(express.json());
 
-// CORS configuration to allow multiple origins
-const allowedOrigins = ['http://localhost:4200', 'https://www.recrutory.com'];
+app.use(cors());
 
-const corsOptions = {
-    origin: (origin, callback) => {
-        if (allowedOrigins.includes(origin) || !origin) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-    optionsSuccessStatus: 204
-};
-
-app.use(cors(corsOptions));
 
 // Available routes
 app.get('/', (req, res) => {
