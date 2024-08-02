@@ -9,16 +9,25 @@ connectToMongo();
 const app = express();
 const port = 4000;
 
-// middleware
+// Middleware
 app.use(express.json());
 
-// CORS configuration
+// CORS configuration to allow multiple origins
+const allowedOrigins = ['http://localhost:4200', 'https://www.recrutory.com'];
+
 const corsOptions = {
-    origin: 'http://localhost:4200', // specify the allowed origin
+    origin: (origin, callback) => {
+        if (allowedOrigins.includes(origin) || !origin) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, // enable to include cookies in the requests
+    credentials: true,
     optionsSuccessStatus: 204
 };
+
 app.use(cors(corsOptions));
 
 // Available routes
