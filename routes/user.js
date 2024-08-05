@@ -177,40 +177,73 @@ router.delete("/users/:id", async (req,res) => {
 })
 
 // edit a particular user
-router.put("/users/:id", async (req,res) => {
- 
+// edit a particular user
+router.put("/users/:id", async (req, res) => {
   try {
-    
     const { id } = req.params;
-    const user = await Users.findById(id);
+    const user = await User.findById(id);
 
-    if(!user){
-      res.status(404).json({
-        message: "User not found"
-      });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // crypt the password before updating
-    const orgPassword = req.body.password || user.password;
-    const hashedPassword = await bcrypt.hash(orgPassword, 10);
+    console.log('Original User:', user);
+    console.log('Request Body:', req.body);
 
-    // updating fields
+    let hashedPassword = user.password;
+    if (req.body.password) {
+      hashedPassword = await bcrypt.hash(req.body.password, 10);
+    }
+
     user.username = req.body.username || user.username;
     user.password = hashedPassword;
     user.role = req.body.role || user.role;
 
-    // save the user
     await user.save();
 
-    res.status(200).json({
-      message: "User Updated Successfully"
-    });
-
+    console.log('Updated User:', user);
+    res.status(200).json({ message: "User Updated Successfully" });
   } catch (err) {
-    res.status(500).json({message: err.message});
+    console.error('Error updating user:', err);
+    res.status(500).json({ message: err.message });
   }
+});
 
-})
+
+// router.put("/users/:id", async (req,res) => {
+ 
+//   try {
+    
+//     const { id } = req.params;
+//     const user = await Users.findById(id);
+
+//     if(!user){
+//       res.status(404).json({
+//         message: "User not found"
+//       });
+//     }
+
+//     // crypt the password before updating
+//     const orgPassword = req.body.password || user.password;
+//     const hashedPassword = await bcrypt.hash(orgPassword, 10);
+
+//     // updating fields
+//     user.username = req.body.username || user.username;
+//     user.password = hashedPassword;
+//     user.role = req.body.role || user.role;
+
+//     // save the user
+//     await user.save();
+
+//     res.status(200).json({
+//       message: "User Updated Successfully"
+//     });
+
+//   } catch (err) {
+//     res.status(500).json({message: err.message});
+//   }
+
+// })
 
 
 // ---------------------- user specific properties -------------------------------------
